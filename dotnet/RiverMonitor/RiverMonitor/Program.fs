@@ -1,21 +1,26 @@
-﻿open System
-open System.Net
-open RiverMonitor
+﻿open RiverMonitor
+open System
+open System.Threading
 
 [<EntryPoint>]
 let main argv =
-    let title = "River Monitor"
-    Console.WriteLine title
-    let usgsUri = "https://waterservices.usgs.gov/nwis/iv/?sites=05331000&period=P1D&format=json"
-    let webClient = new WebClient()
-    let retrievedString = webClient.DownloadString usgsUri
-    let usgsResponse = USGSResponse.Parse retrievedString
-    let dataTypeCount = usgsResponse.Value.TimeSeries.Length
-    Console.WriteLine ("{0} types of data available.", dataTypeCount)
-    for series in usgsResponse.Value.TimeSeries do
-        Console.WriteLine series.Variable.VariableDescription
-        let latestReading = Array.last (Array.last series.Values).Value
-        Console.WriteLine ("Latest value: {0}", latestReading.Value)
-        Console.WriteLine ("At: {0}", latestReading.DateTime)
+    Console.WriteLine "River Monitor"
+    let usgsClient = USGSClient()
+    let mutable running = true
+    let mutable lastRetrievalAt = DateTime.Now - TimeSpan.FromHours 1.0
+    let retrievalInterval = TimeSpan.FromMinutes 5.0
+    let readKeyboardInput () =
+        if Console.KeyAvailable then
+            match Console.ReadKey().Key with
+            | ConsoleKey.Escape -> running <- false
+            | _ -> ()
+        ()
+    while running do
+        if DateTime.Now > (lastRetrievalAt + retrievalInterval) then
+            let reading = usgsClient.Retrieve()
+            lastRetrievalAt <- reading.Time
+            Console.WriteLine (USGSReading.toString reading)
+        readKeyboardInput()
+        Thread.Sleep 100
     Console.WriteLine "Done."
     0
