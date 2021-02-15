@@ -1,0 +1,597 @@
+{
+    "name": "ns1:timeSeriesResponseType",
+    "declaredType": "org.cuahsi.waterml.TimeSeriesResponseType",
+    "scope": "javax.xml.bind.JAXBElement$GlobalScope",
+    "value": {
+        "queryInfo": {
+            "queryURL": "http://waterservices.usgs.gov/nwis/iv/sites=05331000&period=P1D&format=json",
+            "criteria": {
+                "locationParam": "[ALL:05331000]",
+                "variableParam": "ALL",
+                "parameter": []
+            },
+            "note": [
+                {
+                    "value": "[ALL:05331000]",
+                    "title": "filter:sites"
+                },
+                {
+                    "value": "[mode=PERIOD, period=P1D, modifiedSince=null]",
+                    "title": "filter:timeRange"
+                },
+                {
+                    "value": "methodIds=[ALL]",
+                    "title": "filter:methodId"
+                },
+                {
+                    "value": "2021-02-14T17:36:20.849Z",
+                    "title": "requestDT"
+                },
+                {
+                    "value": "26934e10-6eeb-11eb-93f2-2cea7f5e5ede",
+                    "title": "requestId"
+                },
+                {
+                    "value": "Provisional data are subject to revision. Go to http://waterdata.usgs.gov/nwis/help/?provisional for more information.",
+                    "title": "disclaimer"
+                },
+                {
+                    "value": "sdas01",
+                    "title": "server"
+                }
+            ]
+        },
+        "timeSeries": [
+            {
+                "sourceInfo": {
+                    "siteName": "MISSISSIPPI RIVER AT ST. PAUL, MN",
+                    "siteCode": [
+                        {
+                            "value": "05331000",
+                            "network": "NWIS",
+                            "agencyCode": "USGS"
+                        }
+                    ],
+                    "timeZoneInfo": {
+                        "defaultTimeZone": {
+                            "zoneOffset": "-06:00",
+                            "zoneAbbreviation": "CST"
+                        },
+                        "daylightSavingsTimeZone": {
+                            "zoneOffset": "-05:00",
+                            "zoneAbbreviation": "CDT"
+                        },
+                        "siteUsesDaylightSavingsTime": true
+                    },
+                    "geoLocation": {
+                        "geogLocation": {
+                            "srs": "EPSG:4326",
+                            "latitude": 44.9444444,
+                            "longitude": -93.0881111
+                        },
+                        "localSiteXY": []
+                    },
+                    "note": [],
+                    "siteType": [],
+                    "siteProperty": [
+                        {
+                            "value": "ST",
+                            "name": "siteTypeCd"
+                        },
+                        {
+                            "value": "07010206",
+                            "name": "hucCd"
+                        },
+                        {
+                            "value": "27",
+                            "name": "stateCd"
+                        },
+                        {
+                            "value": "27123",
+                            "name": "countyCd"
+                        }
+                    ]
+                },
+                "variable": {
+                    "variableCode": [
+                        {
+                            "value": "00011",
+                            "network": "NWIS",
+                            "vocabulary": "NWIS:UnitValues",
+                            "variableID": 45807043,
+                            "default": true
+                        }
+                    ],
+                    "variableName": "Temperature, water, &#176;F",
+                    "variableDescription": "Temperature, water, degrees Fahrenheit",
+                    "valueType": "Derived Value",
+                    "unit": {
+                        "unitCode": "deg F"
+                    },
+                    "options": {
+                        "option": [
+                            {
+                                "name": "Statistic",
+                                "optionCode": "00000"
+                            }
+                        ]
+                    },
+                    "note": [],
+                    "noDataValue": -999999,
+                    "variableProperty": [],
+                    "oid": "45807043"
+                },
+                "values": [
+                    {
+                        "value": [
+{{rm-temperature}}
+                        ],
+                        "qualifier": [
+                            {
+                                "qualifierCode": "P",
+                                "qualifierDescription": "Provisional data subject to revision.",
+                                "qualifierID": 0,
+                                "network": "NWIS",
+                                "vocabulary": "uv_rmk_cd"
+                            }
+                        ],
+                        "qualityControlLevel": [],
+                        "method": [
+                            {
+                                "methodDescription": "",
+                                "methodID": 74667
+                            }
+                        ],
+                        "source": [],
+                        "offset": [],
+                        "sample": [],
+                        "censorCode": []
+                    }
+                ],
+                "name": "USGS:05331000:00011:00000"
+            },
+            {
+                "sourceInfo": {
+                    "siteName": "MISSISSIPPI RIVER AT ST. PAUL, MN",
+                    "siteCode": [
+                        {
+                            "value": "05331000",
+                            "network": "NWIS",
+                            "agencyCode": "USGS"
+                        }
+                    ],
+                    "timeZoneInfo": {
+                        "defaultTimeZone": {
+                            "zoneOffset": "-06:00",
+                            "zoneAbbreviation": "CST"
+                        },
+                        "daylightSavingsTimeZone": {
+                            "zoneOffset": "-05:00",
+                            "zoneAbbreviation": "CDT"
+                        },
+                        "siteUsesDaylightSavingsTime": true
+                    },
+                    "geoLocation": {
+                        "geogLocation": {
+                            "srs": "EPSG:4326",
+                            "latitude": 44.9444444,
+                            "longitude": -93.0881111
+                        },
+                        "localSiteXY": []
+                    },
+                    "note": [],
+                    "siteType": [],
+                    "siteProperty": [
+                        {
+                            "value": "ST",
+                            "name": "siteTypeCd"
+                        },
+                        {
+                            "value": "07010206",
+                            "name": "hucCd"
+                        },
+                        {
+                            "value": "27",
+                            "name": "stateCd"
+                        },
+                        {
+                            "value": "27123",
+                            "name": "countyCd"
+                        }
+                    ]
+                },
+                "variable": {
+                    "variableCode": [
+                        {
+                            "value": "00060",
+                            "network": "NWIS",
+                            "vocabulary": "NWIS:UnitValues",
+                            "variableID": 45807197,
+                            "default": true
+                        }
+                    ],
+                    "variableName": "Streamflow, ft&#179;/s",
+                    "variableDescription": "Discharge, cubic feet per second",
+                    "valueType": "Derived Value",
+                    "unit": {
+                        "unitCode": "ft3/s"
+                    },
+                    "options": {
+                        "option": [
+                            {
+                                "name": "Statistic",
+                                "optionCode": "00000"
+                            }
+                        ]
+                    },
+                    "note": [],
+                    "noDataValue": -999999,
+                    "variableProperty": [],
+                    "oid": "45807197"
+                },
+                "values": [
+                    {
+                        "value": [
+{{rm-dischargevolume}}
+                        ],
+                        "qualifier": [
+                            {
+                                "qualifierCode": "e",
+                                "qualifierDescription": "Value has been estimated.",
+                                "qualifierID": 0,
+                                "network": "NWIS",
+                                "vocabulary": "uv_rmk_cd"
+                            },
+                            {
+                                "qualifierCode": "P",
+                                "qualifierDescription": "Provisional data subject to revision.",
+                                "qualifierID": 1,
+                                "network": "NWIS",
+                                "vocabulary": "uv_rmk_cd"
+                            }
+                        ],
+                        "qualityControlLevel": [],
+                        "method": [
+                            {
+                                "methodDescription": "",
+                                "methodID": 168064
+                            }
+                        ],
+                        "source": [],
+                        "offset": [],
+                        "sample": [],
+                        "censorCode": []
+                    }
+                ],
+                "name": "USGS:05331000:00060:00000"
+            },
+            {
+                "sourceInfo": {
+                    "siteName": "MISSISSIPPI RIVER AT ST. PAUL, MN",
+                    "siteCode": [
+                        {
+                            "value": "05331000",
+                            "network": "NWIS",
+                            "agencyCode": "USGS"
+                        }
+                    ],
+                    "timeZoneInfo": {
+                        "defaultTimeZone": {
+                            "zoneOffset": "-06:00",
+                            "zoneAbbreviation": "CST"
+                        },
+                        "daylightSavingsTimeZone": {
+                            "zoneOffset": "-05:00",
+                            "zoneAbbreviation": "CDT"
+                        },
+                        "siteUsesDaylightSavingsTime": true
+                    },
+                    "geoLocation": {
+                        "geogLocation": {
+                            "srs": "EPSG:4326",
+                            "latitude": 44.9444444,
+                            "longitude": -93.0881111
+                        },
+                        "localSiteXY": []
+                    },
+                    "note": [],
+                    "siteType": [],
+                    "siteProperty": [
+                        {
+                            "value": "ST",
+                            "name": "siteTypeCd"
+                        },
+                        {
+                            "value": "07010206",
+                            "name": "hucCd"
+                        },
+                        {
+                            "value": "27",
+                            "name": "stateCd"
+                        },
+                        {
+                            "value": "27123",
+                            "name": "countyCd"
+                        }
+                    ]
+                },
+                "variable": {
+                    "variableCode": [
+                        {
+                            "value": "00065",
+                            "network": "NWIS",
+                            "vocabulary": "NWIS:UnitValues",
+                            "variableID": 45807202,
+                            "default": true
+                        }
+                    ],
+                    "variableName": "Gage height, ft",
+                    "variableDescription": "Gage height, feet",
+                    "valueType": "Derived Value",
+                    "unit": {
+                        "unitCode": "ft"
+                    },
+                    "options": {
+                        "option": [
+                            {
+                                "name": "Statistic",
+                                "optionCode": "00000"
+                            }
+                        ]
+                    },
+                    "note": [],
+                    "noDataValue": -999999,
+                    "variableProperty": [],
+                    "oid": "45807202"
+                },
+                "values": [
+                    {
+                        "value": [
+{{rm-gageheight}}
+                        ],
+                        "qualifier": [
+                            {
+                                "qualifierCode": "P",
+                                "qualifierDescription": "Provisional data subject to revision.",
+                                "qualifierID": 0,
+                                "network": "NWIS",
+                                "vocabulary": "uv_rmk_cd"
+                            }
+                        ],
+                        "qualityControlLevel": [],
+                        "method": [
+                            {
+                                "methodDescription": "",
+                                "methodID": 74662
+                            }
+                        ],
+                        "source": [],
+                        "offset": [],
+                        "sample": [],
+                        "censorCode": []
+                    }
+                ],
+                "name": "USGS:05331000:00065:00000"
+            },
+            {
+                "sourceInfo": {
+                    "siteName": "MISSISSIPPI RIVER AT ST. PAUL, MN",
+                    "siteCode": [
+                        {
+                            "value": "05331000",
+                            "network": "NWIS",
+                            "agencyCode": "USGS"
+                        }
+                    ],
+                    "timeZoneInfo": {
+                        "defaultTimeZone": {
+                            "zoneOffset": "-06:00",
+                            "zoneAbbreviation": "CST"
+                        },
+                        "daylightSavingsTimeZone": {
+                            "zoneOffset": "-05:00",
+                            "zoneAbbreviation": "CDT"
+                        },
+                        "siteUsesDaylightSavingsTime": true
+                    },
+                    "geoLocation": {
+                        "geogLocation": {
+                            "srs": "EPSG:4326",
+                            "latitude": 44.9444444,
+                            "longitude": -93.0881111
+                        },
+                        "localSiteXY": []
+                    },
+                    "note": [],
+                    "siteType": [],
+                    "siteProperty": [
+                        {
+                            "value": "ST",
+                            "name": "siteTypeCd"
+                        },
+                        {
+                            "value": "07010206",
+                            "name": "hucCd"
+                        },
+                        {
+                            "value": "27",
+                            "name": "stateCd"
+                        },
+                        {
+                            "value": "27123",
+                            "name": "countyCd"
+                        }
+                    ]
+                },
+                "variable": {
+                    "variableCode": [
+                        {
+                            "value": "63160",
+                            "network": "NWIS",
+                            "vocabulary": "NWIS:UnitValues",
+                            "variableID": 51438657,
+                            "default": true
+                        }
+                    ],
+                    "variableName": "Stream water level elevation above NAVD 1988, in ft",
+                    "variableDescription": "Stream water level elevation above NAVD 1988, in feet",
+                    "valueType": "Derived Value",
+                    "unit": {
+                        "unitCode": "ft"
+                    },
+                    "options": {
+                        "option": [
+                            {
+                                "name": "Statistic",
+                                "optionCode": "00000"
+                            }
+                        ]
+                    },
+                    "note": [],
+                    "noDataValue": -999999,
+                    "variableProperty": [],
+                    "oid": "51438657"
+                },
+                "values": [
+                    {
+                        "value": [
+{{rm-elevation}}
+                        ],
+                        "qualifier": [
+                            {
+                                "qualifierCode": "P",
+                                "qualifierDescription": "Provisional data subject to revision.",
+                                "qualifierID": 0,
+                                "network": "NWIS",
+                                "vocabulary": "uv_rmk_cd"
+                            }
+                        ],
+                        "qualityControlLevel": [],
+                        "method": [
+                            {
+                                "methodDescription": "",
+                                "methodID": 272792
+                            }
+                        ],
+                        "source": [],
+                        "offset": [],
+                        "sample": [],
+                        "censorCode": []
+                    }
+                ],
+                "name": "USGS:05331000:63160:00000"
+            },
+            {
+                "sourceInfo": {
+                    "siteName": "MISSISSIPPI RIVER AT ST. PAUL, MN",
+                    "siteCode": [
+                        {
+                            "value": "05331000",
+                            "network": "NWIS",
+                            "agencyCode": "USGS"
+                        }
+                    ],
+                    "timeZoneInfo": {
+                        "defaultTimeZone": {
+                            "zoneOffset": "-06:00",
+                            "zoneAbbreviation": "CST"
+                        },
+                        "daylightSavingsTimeZone": {
+                            "zoneOffset": "-05:00",
+                            "zoneAbbreviation": "CDT"
+                        },
+                        "siteUsesDaylightSavingsTime": true
+                    },
+                    "geoLocation": {
+                        "geogLocation": {
+                            "srs": "EPSG:4326",
+                            "latitude": 44.9444444,
+                            "longitude": -93.0881111
+                        },
+                        "localSiteXY": []
+                    },
+                    "note": [],
+                    "siteType": [],
+                    "siteProperty": [
+                        {
+                            "value": "ST",
+                            "name": "siteTypeCd"
+                        },
+                        {
+                            "value": "07010206",
+                            "name": "hucCd"
+                        },
+                        {
+                            "value": "27",
+                            "name": "stateCd"
+                        },
+                        {
+                            "value": "27123",
+                            "name": "countyCd"
+                        }
+                    ]
+                },
+                "variable": {
+                    "variableCode": [
+                        {
+                            "value": "72255",
+                            "network": "NWIS",
+                            "vocabulary": "NWIS:UnitValues",
+                            "variableID": 52333322,
+                            "default": true
+                        }
+                    ],
+                    "variableName": "Mean water velocity for discharge computation, feet per second",
+                    "variableDescription": "Mean water velocity for discharge computation, feet per second",
+                    "valueType": "Derived Value",
+                    "unit": {
+                        "unitCode": "ft/sec"
+                    },
+                    "options": {
+                        "option": [
+                            {
+                                "name": "Statistic",
+                                "optionCode": "00000"
+                            }
+                        ]
+                    },
+                    "note": [],
+                    "noDataValue": -999999,
+                    "variableProperty": [],
+                    "oid": "52333322"
+                },
+                "values": [
+                    {
+                        "value": [
+{{rm-velocity}}
+                        ],
+                        "qualifier": [
+                            {
+                                "qualifierCode": "P",
+                                "qualifierDescription": "Provisional data subject to revision.",
+                                "qualifierID": 0,
+                                "network": "NWIS",
+                                "vocabulary": "uv_rmk_cd"
+                            }
+                        ],
+                        "qualityControlLevel": [],
+                        "method": [
+                            {
+                                "methodDescription": "[Stream Velocity Average]",
+                                "methodID": 168065
+                            }
+                        ],
+                        "source": [],
+                        "offset": [],
+                        "sample": [],
+                        "censorCode": []
+                    }
+                ],
+                "name": "USGS:05331000:72255:00000"
+            }
+        ]
+    },
+    "nil": false,
+    "globalScope": true,
+    "typeSubstituted": false
+}

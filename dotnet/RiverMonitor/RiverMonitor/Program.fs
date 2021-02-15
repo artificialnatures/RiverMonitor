@@ -5,7 +5,6 @@ open System.Threading
 [<EntryPoint>]
 let main argv =
     Console.WriteLine "River Monitor"
-    let usgsClient = USGSClient()
     let mutable running = true
     let mutable lastRetrievalAt = DateTime.Now - TimeSpan.FromHours 1.0
     let retrievalInterval = TimeSpan.FromMinutes 5.0
@@ -17,9 +16,9 @@ let main argv =
         ()
     while running do
         if DateTime.Now > (lastRetrievalAt + retrievalInterval) then
-            let reading = usgsClient.Retrieve()
+            let reading = USGSWaterServices.retrieveLatest ()
             lastRetrievalAt <- reading.Time
-            Console.WriteLine (USGSReading.toString reading)
+            Console.WriteLine (USGSWaterServices.toString reading)
         readKeyboardInput()
         Thread.Sleep 100
     Console.WriteLine "Done."
