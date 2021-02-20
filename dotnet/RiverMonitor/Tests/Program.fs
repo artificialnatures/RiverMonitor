@@ -1,1 +1,6 @@
-module Program = let [<EntryPoint>] main _ = 0
+module Program =
+    open Expecto
+    
+    [<EntryPoint>]
+    let  main args =
+        runTestsInAssemblyWithCLIArgs [] args

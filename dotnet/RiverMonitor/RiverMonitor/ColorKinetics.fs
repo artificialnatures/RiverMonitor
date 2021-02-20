@@ -12,12 +12,12 @@ module ColorKinetics =
         | SetRelativeIntensity
         | SetShow
     type Response =
-        | ModeWasSet //Y00dd
-        | LightsAreOff //Y0100
-        | IntensityWasSet //Y02dd
-        | NothingWasSet //Y03dd
-        | ShowWasSet //Y04dd
-        | ErrorOccurred //Y0Fdd
+        | ModeWasSet of int
+        | LightsAreOff
+        | IntensityWasSet of int
+        | NothingWasSet of int
+        | ShowWasSet of int
+        | ErrorOccurred of int
     let buildRequestCode request value =
         let baseCode =
             match request with
@@ -27,6 +27,19 @@ module ColorKinetics =
             | SetShow -> ['X'; '0'; '4']
         match value with
         | Some value ->
-            Hexadecimal.convert value
+            Hexadecimal.toCharacters value
             |> List.append baseCode
         | None -> baseCode
+    let parseResponse characters =
+        let integerValue =
+            match characters with
+            | [_; _; _; sixteens; units] -> Hexadecimal.fromCharacters [sixteens; units]
+            | _ -> 0
+        match characters with
+        | ['Y'; '0'; '0'; _; _] -> Response.ModeWasSet integerValue
+        | ['Y'; '0'; '1'; '0'; '0'] -> Response.LightsAreOff
+        | ['Y'; '0'; '2'; _; _] -> Response.IntensityWasSet integerValue
+        | ['Y'; '0'; '3'; _; _] -> Response.NothingWasSet integerValue
+        | ['Y'; '0'; '4'; _; _] -> Response.ShowWasSet integerValue
+        | ['Y'; '0'; 'F'; _; _] -> Response.ErrorOccurred integerValue
+        | _ -> Response.ErrorOccurred integerValue
