@@ -12,22 +12,35 @@ let ``Parse USGS json`` () =
     Assert.All(results, (fun (expectedLevel, reading) -> Assert.Equal(expectedLevel, reading.IntensityLevel)))
 
 [<Fact>]
+let ``Build hexadecimal request codes`` () =
+    let testCases =
+        [
+            (['X'; '0'; '1'; '0'; '0'],
+             ColorKinetics.buildRequestCode ColorKinetics.Request.TurnLightsOff None)
+            (['X'; '0'; '2'; 'F'; 'F'],
+             ColorKinetics.buildRequestCode ColorKinetics.Request.SetIntensity (Some 255))
+            (['X'; '0'; '3'; '2'; '0'],
+             ColorKinetics.buildRequestCode ColorKinetics.Request.SetRelativeIntensity (Some 32))
+            (['X'; '0'; '4'; '0'; '3'],
+             ColorKinetics.buildRequestCode ColorKinetics.Request.SetShow (Some 3))
+        ]
+    let assertAllEqual (a : char list) (b : char list) =
+        List.zip a b
+        |> List.iter (Assert.Equal)
+    Assert.All(testCases, (fun (expected, actual) -> assertAllEqual expected actual))
+
+[<Fact>]
 let ``Convert to hexadecimal characters`` () =
     let testCases =
         [
-            (0, ['0'; '0'])
-            (1, ['0'; '1'])
-            (10, ['0'; 'A'])
-            (100, ['6'; '4'])
-            (112, ['7'; '0'])
-            (255, ['F'; 'F'])
+            (['0'; '0'], Hexadecimal.convert 0)
+            (['0'; '1'], Hexadecimal.convert 1)
+            (['0'; 'A'], Hexadecimal.convert 10)
+            (['6'; '4'], Hexadecimal.convert 100)
+            (['7'; '0'], Hexadecimal.convert 112)
+            (['F'; 'F'], Hexadecimal.convert 255)
         ]
-    let expectedResults = List.map snd testCases
-    let results =
-        List.map fst testCases
-        |> List.map Hexdecimal.convert
-        |> List.zip expectedResults
     let assertAllEqual (a : char list) (b : char list) =
         List.zip a b
-        |> List.iter (fun (expected, actual) -> Assert.Equal(expected, actual))
-    Assert.All(results, (fun (expected, actual) -> assertAllEqual expected actual))
+        |> List.iter (Assert.Equal)
+    Assert.All(testCases, (fun (expected, actual) -> assertAllEqual expected actual))

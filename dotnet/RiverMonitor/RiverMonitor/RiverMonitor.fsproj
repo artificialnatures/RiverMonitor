@@ -6,8 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="ColorKinetics.fs" />
         <Compile Include="Hexadecimal.fs" />
+        <Compile Include="ColorKinetics.fs" />
         <Compile Include="MeadowApp.fs" />
         <Compile Include="USGSWaterServices.fs" />
         <Compile Include="Program.fs" />
