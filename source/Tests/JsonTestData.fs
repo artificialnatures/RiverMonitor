@@ -1,4 +1,4 @@
-module TestData
+module JsonTestData
     open System
     open RiverMonitor
     

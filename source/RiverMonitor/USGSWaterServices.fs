@@ -8,7 +8,7 @@ open FSharp.Data
 //JsonProvider handles retrieval and parsing of USGS Water Services data.
 //The sample .json file tells the JsonProvider the data structure to expect.
 //Refer to https://waterservices.usgs.gov/ for details.
-type USGSWaterServicesResponse = JsonProvider<"json/USGSWaterServices_Response_20210214.json">
+type USGSWaterServicesResponse = JsonProvider<"../json/USGSWaterServices_Response_20210214.json">
 
 type USGSVariableName =
     | Temperature
@@ -105,8 +105,13 @@ module USGSWaterServices =
             IntensityLevel = findDischargeLevel dischargeVolume
         }
     let retrieveLatest () =
-        USGSWaterServicesResponse.Load(uri)
-        |> assembleReading
+        try
+            USGSWaterServicesResponse.Load(uri)
+            |> assembleReading
+            |> Ok
+        with
+        | _ -> Error "Failed to retrieve USGS data."
+        
     let parseReading (jsonText : string) =
         use stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonText))
         USGSWaterServicesResponse.Load(stream)
