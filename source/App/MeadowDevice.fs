@@ -58,21 +58,6 @@ module MeadowF7Device =
                 parity,
                 stopBits,
                 256)
-        member this.sendRequest request =
-            try
-                ColorKinetics.buildRequestCode request
-                |> Hexadecimal.toBytes
-                |> (this.serialPort.Write)
-                |> ignore
-                System.Threading.Thread.Sleep 100
-                let mutable buffer : byte array = Array.zeroCreate 8
-                this.serialPort.Read(buffer, 0, 8) |> ignore
-                Hexadecimal.fromBytes buffer
-                |> ColorKinetics.parseResponse
-                |> Ok
-            with
-            | _ -> Error "Failed to communicate via serial port."
-        //TODO: Create Application function to send and receive from serial port...
         
         interface Device with
             member this.Mode = if this.modePin.State then DeviceMode.Live else DeviceMode.Testing
@@ -83,6 +68,20 @@ module MeadowF7Device =
                 | Normal -> this.onboardLed.SetColor RgbLed.Colors.Green
                 | Troubled -> this.onboardLed.SetColor RgbLed.Colors.Yellow
                 | Failed -> this.onboardLed.SetColor RgbLed.Colors.Red
+            member this.SendRequest request =
+                try
+                    ColorKinetics.buildRequestCode request
+                    |> Hexadecimal.toBytes
+                    |> (this.serialPort.Write)
+                    |> ignore
+                    System.Threading.Thread.Sleep 100
+                    let mutable buffer : byte array = Array.zeroCreate 8
+                    this.serialPort.Read(buffer, 0, 8) |> ignore
+                    Hexadecimal.fromBytes buffer
+                    |> ColorKinetics.parseResponse
+                    |> Ok
+                with
+                | _ -> Error "Failed to communicate via serial port."
     
     let initialize debugMode =
         try

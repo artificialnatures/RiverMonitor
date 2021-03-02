@@ -10,10 +10,10 @@ let main _ =
             Application.chooseMode state
             |> Application.verifyConnection
             |> Application.retrieveReading
+            |> Application.updateLights
             |> Application.assessCondition
             |> Application.adjustPollInterval
             |> Application.displayCondition
-            |> Application.logReading
         Thread.Sleep nextState.PollInterval
         program nextState
     let debugMode = true
@@ -22,5 +22,5 @@ let main _ =
                            ExecutionEnvironment.OnDevice
                            ExecutionStrategy.RetrieveFromUSGS
                            device
-    program initialState |> ignore
+    program {initialState with PollInterval = System.TimeSpan.FromSeconds 30.0} |> ignore
     0

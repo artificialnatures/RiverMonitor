@@ -10,15 +10,15 @@ let main _ =
             Application.chooseMode state
             |> Application.verifyConnection
             |> Application.retrieveReading
+            |> Application.updateLights
             |> Application.assessCondition
             |> Application.adjustPollInterval
             |> Application.displayCondition
-            |> Application.logReading
         Thread.Sleep nextState.PollInterval
         program nextState
     let initialState = Application.initialState
                            ExecutionEnvironment.CommandLine
-                           ExecutionStrategy.RetrieveFromUSGS
+                           ExecutionStrategy.GenerateTestSamples
                            None
     program {initialState with PollInterval = TimeSpan.FromSeconds 10.0} |> ignore
     0

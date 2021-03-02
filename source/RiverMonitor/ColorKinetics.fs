@@ -11,6 +11,12 @@ module ColorKinetics =
         | SetIntensity of int
         | SetRelativeIntensity of int
         | SetShow of int
+    let requestToString request =
+        match request with
+        | TurnLightsOff -> "Turning lights off"
+        | SetIntensity value -> $"Setting intensity to {value}"
+        | SetRelativeIntensity value -> $"Setting relative intensity to {value}"
+        | SetShow value -> $"Setting show to {value}"
     type Response =
         | ModeWasSet of int
         | LightsAreOff
@@ -18,6 +24,14 @@ module ColorKinetics =
         | NothingWasSet of int
         | ShowWasSet of int
         | ErrorOccurred of int
+    let responseToString response =
+        match response with
+        | ModeWasSet value -> $"Mode was set to {value}"
+        | LightsAreOff -> "Lights were turned off"
+        | IntensityWasSet value -> $"Intensity was set to {value}"
+        | NothingWasSet value -> $"Nothing was set to {value}"
+        | ShowWasSet value -> $"Show was set to {value}"
+        | ErrorOccurred value -> $"Error {value} occurred"
     let buildRequestCode request =
         match request with
         | TurnLightsOff ->

@@ -1,5 +1,7 @@
 module RiverMonitor.ApplicationState
 
+open RiverMonitor.ColorKinetics
+
 type ExecutionEnvironment =
     | CommandLine
     | OnDevice
@@ -20,6 +22,7 @@ type State =
         Reading: USGSReading
         PollInterval: System.TimeSpan
         PreviousRetrievalAt: System.DateTime
+        PreviousRequest: Request
         Device : Device option
         GenerateReading : unit -> USGSReading
     }

@@ -8,20 +8,24 @@ let defaultPollInterval strategy =
     | RetrieveFromUSGS -> 15.0 * 60.0 |> TimeSpan.FromSeconds
     | GenerateTestSamples -> 30.0 |> TimeSpan.FromSeconds
 
-let createLogger environment : string -> unit =
-    match environment with
+let createLogger state : string -> unit =
+    match state.Environment with
     | CommandLine -> Console.WriteLine
-    | _ -> ignore
+    | OnDevice ->
+        match state.Device with
+        | Some device ->
+            match device.Mode with
+            | DeviceMode.Live -> ignore
+            | DeviceMode.Testing -> Console.WriteLine
+        | None -> ignore
 
-let createReadingLogger environment : Result<USGSReading, string> -> unit =
-    match environment with
-    | CommandLine ->
-        let log (reading : Result<USGSReading, string>) =
-            match reading with
-            | Ok reading -> Console.WriteLine(USGSWaterServices.toString reading)
-            | Error message -> Console.WriteLine(message)
-        log
-    | _ -> ignore
+let createReadingLogger state : Result<USGSReading, string> -> unit =
+    let log = createLogger state
+    let logReading result =
+        match result with
+        | Ok reading -> log (USGSWaterServices.toString reading)
+        | Error message -> log message
+    logReading
 
 let buildReadingGenerator () =
     let mutable index = -1
@@ -49,6 +53,7 @@ let initialState environment strategy device =
         Reading = Seq.head TestData.samples
         PollInterval = defaultPollInterval strategy
         PreviousRetrievalAt = DateTime.MinValue
+        PreviousRequest = ColorKinetics.Request.TurnLightsOff
         Device = device
         GenerateReading = buildReadingGenerator()
     }
@@ -80,18 +85,24 @@ let verifyConnection state =
 
 let retrieveReading state =
     let retrieveFromUSGS state =
-        match USGSWaterServices.retrieveLatest() with
+        let response = USGSWaterServices.retrieveLatest()
+        response |> createReadingLogger state
+        match response with
         | Ok reading -> {state with Reading = reading; PreviousRetrievalAt = DateTime.Now}
         | Error _ -> {state with Reading = state.GenerateReading()}
-    match (state.Environment, state.Strategy, state.Device) with
-    | ExecutionEnvironment.OnDevice, ExecutionStrategy.RetrieveFromUSGS, Some device ->
-        match device.IsConnected with
-        | true -> retrieveFromUSGS state
-        | false -> {state with Reading = state.GenerateReading()}
-    | ExecutionEnvironment.CommandLine, ExecutionStrategy.RetrieveFromUSGS, None ->
-        retrieveFromUSGS state
-    | _, _, _ ->
-        {state with Reading = state.GenerateReading(); PreviousRetrievalAt = DateTime.Now}
+    let nextState =
+        match (state.Environment, state.Strategy, state.Device) with
+        | ExecutionEnvironment.OnDevice, ExecutionStrategy.RetrieveFromUSGS, Some device ->
+            match device.IsConnected with
+            | true -> retrieveFromUSGS state
+            | false -> {state with Reading = state.GenerateReading()}
+        | ExecutionEnvironment.CommandLine, ExecutionStrategy.RetrieveFromUSGS, None ->
+            retrieveFromUSGS state
+        | _, _, _ ->
+            {state with Reading = state.GenerateReading(); PreviousRetrievalAt = DateTime.Now}
+    USGSWaterServices.toString nextState.Reading
+    |> createLogger state
+    nextState
 
 let adjustPollInterval state =
     let pollInterval =
@@ -112,18 +123,34 @@ let assessCondition state =
     {state with Condition = condition}
 
 let displayCondition state =
+    $"Condition: {ConnectionCondition.toString state.Condition}"
+    |> createLogger state
     match state.Environment with
     | ExecutionEnvironment.OnDevice ->
         match state.Device with
         | Some device -> device.DisplayCondition state.Condition
         | None -> ()
-    | ExecutionEnvironment.CommandLine ->
-        Console.WriteLine $"Condition: {nameof state.Condition}"
+    | ExecutionEnvironment.CommandLine -> ()
     state
 
-let logReading state =
-    match state.Environment with
-    | ExecutionEnvironment.CommandLine ->
-        Console.WriteLine(USGSWaterServices.toString state.Reading)
-    | _ -> ()
-    state
+let updateLights state =
+    let log = createLogger state
+    let request = ColorKinetics.Request.SetShow state.Reading.IntensityLevel
+    if request = state.PreviousRequest then
+        log $"No request sent to Color Kinetics, already {ColorKinetics.requestToString request}"
+        state
+    else
+        match state.Environment with
+        | ExecutionEnvironment.CommandLine ->
+            log $"Would send request to Color Kinetics: {ColorKinetics.requestToString request}"
+        | ExecutionEnvironment.OnDevice ->
+            log $"Sending request to Color Kinetics: {ColorKinetics.requestToString request}"
+            match state.Device with
+            | Some device ->
+                match device.SendRequest request with
+                | Ok response ->
+                    log $"Received response from Color Kinetics: {ColorKinetics.responseToString response}"
+                | Error message ->
+                    log $"Error from Color Kinetics: {message}"
+            | None -> log $"Error: Device not initialized"
+        {state with PreviousRequest = request}
