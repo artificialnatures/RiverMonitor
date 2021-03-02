@@ -17,3 +17,9 @@ module Hexadecimal =
         List.rev characters
         |> List.mapi characterToInteger
         |> List.sum
+    let toBytes characters =
+        List.toArray characters
+        |> System.Text.Encoding.UTF8.GetBytes
+    let fromBytes bytes =
+        System.Text.Encoding.UTF8.GetChars bytes
+        |> List.ofArray

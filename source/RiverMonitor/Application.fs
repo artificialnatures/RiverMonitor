@@ -23,20 +23,12 @@ let createReadingLogger environment : Result<USGSReading, string> -> unit =
         log
     | _ -> ignore
 
-let createRetrieve strategy =
-    match strategy with
-    | RetrieveFromUSGS ->
-        let retrieve state =
-            let reading = USGSWaterServices.retrieveLatest ()
-            {state with Reading = reading; PreviousRetrievalAt = DateTime.Now}
-        retrieve
-    | GenerateTestSamples ->
-        let mutable index = -1
-        let retrieve state =
-            index <- index + 1
-            let reading = Seq.item index TestData.samples
-            {state with Reading = Ok reading; PreviousRetrievalAt = DateTime.Now}
-        retrieve
+let buildReadingGenerator () =
+    let mutable index = -1
+    let retrieve () =
+        index <- index + 1
+        Seq.item index TestData.samples
+    retrieve
 
 let conditionColor condition =
     match condition with
@@ -53,15 +45,53 @@ let initialState environment strategy device =
     {
         Environment = environment
         Strategy = strategy
-        Condition = Condition.Troubled
-        Reading = Seq.head TestData.samples |> Ok
+        Condition = ConnectionCondition.Troubled
+        Reading = Seq.head TestData.samples
         PollInterval = defaultPollInterval strategy
         PreviousRetrievalAt = DateTime.MinValue
-        RetrieveReading = createRetrieve strategy
-        LogReading = createReadingLogger environment
-        LogMessage = createLogger environment
-        DisplayCondition = createDisplayCondition device
+        Device = device
+        GenerateReading = buildReadingGenerator()
     }
+
+let chooseMode state =
+    let sampledMode =
+        match state.Environment with
+        | ExecutionEnvironment.OnDevice ->
+            match state.Device with
+            | Some device ->
+                match device.Mode with
+                | DeviceMode.Live -> ExecutionStrategy.RetrieveFromUSGS
+                | DeviceMode.Testing -> ExecutionStrategy.GenerateTestSamples
+            | None -> state.Strategy
+        | ExecutionEnvironment.CommandLine -> state.Strategy
+    if state.Strategy = sampledMode
+    then state
+    else {state with Strategy = sampledMode}
+
+let verifyConnection state =
+    match (state.Environment, state.Strategy) with
+    | ExecutionEnvironment.OnDevice, ExecutionStrategy.RetrieveFromUSGS ->
+        match state.Device with
+        | Some device ->
+            if not device.IsConnected then device.Connect()
+        | None -> ()
+    | _, _ -> ()
+    state
+
+let retrieveReading state =
+    let retrieveFromUSGS state =
+        match USGSWaterServices.retrieveLatest() with
+        | Ok reading -> {state with Reading = reading; PreviousRetrievalAt = DateTime.Now}
+        | Error _ -> {state with Reading = state.GenerateReading()}
+    match (state.Environment, state.Strategy, state.Device) with
+    | ExecutionEnvironment.OnDevice, ExecutionStrategy.RetrieveFromUSGS, Some device ->
+        match device.IsConnected with
+        | true -> retrieveFromUSGS state
+        | false -> {state with Reading = state.GenerateReading()}
+    | ExecutionEnvironment.CommandLine, ExecutionStrategy.RetrieveFromUSGS, None ->
+        retrieveFromUSGS state
+    | _, _, _ ->
+        {state with Reading = state.GenerateReading(); PreviousRetrievalAt = DateTime.Now}
 
 let adjustPollInterval state =
     let pollInterval =
@@ -82,9 +112,18 @@ let assessCondition state =
     {state with Condition = condition}
 
 let displayCondition state =
-    state.DisplayCondition state.Condition
+    match state.Environment with
+    | ExecutionEnvironment.OnDevice ->
+        match state.Device with
+        | Some device -> device.DisplayCondition state.Condition
+        | None -> ()
+    | ExecutionEnvironment.CommandLine ->
+        Console.WriteLine $"Condition: {nameof state.Condition}"
     state
 
 let logReading state =
-    state.LogReading state.Reading
+    match state.Environment with
+    | ExecutionEnvironment.CommandLine ->
+        Console.WriteLine(USGSWaterServices.toString state.Reading)
+    | _ -> ()
     state

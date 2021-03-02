@@ -8,6 +8,9 @@ open FSharp.Data
 //JsonProvider handles retrieval and parsing of USGS Water Services data.
 //The sample .json file tells the JsonProvider the data structure to expect.
 //Refer to https://waterservices.usgs.gov/ for details.
+//This program uses the feed at:
+//let siteId = "05331000"
+//https://waterservices.usgs.gov/nwis/iv/?sites=05331000&period=P1D&format=json
 type USGSWaterServicesResponse = JsonProvider<"../json/USGSWaterServices_Response_20210214.json">
 
 type USGSVariableName =

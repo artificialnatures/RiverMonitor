@@ -5,6 +5,7 @@
     <AssemblyName>App</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="WifiNetworks.fs" />
     <Compile Include="MeadowDevice.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

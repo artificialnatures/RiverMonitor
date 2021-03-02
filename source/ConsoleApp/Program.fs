@@ -1,3 +1,4 @@
+open System
 open System.Threading
 open RiverMonitor
 open RiverMonitor.ApplicationState
@@ -6,7 +7,9 @@ open RiverMonitor.ApplicationState
 let main _ =
     let rec program state =
         let nextState =
-            state.RetrieveReading state
+            Application.chooseMode state
+            |> Application.verifyConnection
+            |> Application.retrieveReading
             |> Application.assessCondition
             |> Application.adjustPollInterval
             |> Application.displayCondition
@@ -15,7 +18,7 @@ let main _ =
         program nextState
     let initialState = Application.initialState
                            ExecutionEnvironment.CommandLine
-                           ExecutionStrategy.GenerateTestSamples
+                           ExecutionStrategy.RetrieveFromUSGS
                            None
-    program initialState |> ignore
+    program {initialState with PollInterval = TimeSpan.FromSeconds 10.0} |> ignore
     0

@@ -8,9 +8,9 @@ module ColorKinetics =
     let serialFlowControl = false
     type Request =
         | TurnLightsOff
-        | SetIntensity
-        | SetRelativeIntensity
-        | SetShow
+        | SetIntensity of int
+        | SetRelativeIntensity of int
+        | SetShow of int
     type Response =
         | ModeWasSet of int
         | LightsAreOff
@@ -18,18 +18,19 @@ module ColorKinetics =
         | NothingWasSet of int
         | ShowWasSet of int
         | ErrorOccurred of int
-    let buildRequestCode request value =
-        let baseCode =
-            match request with
-            | TurnLightsOff -> ['X'; '0'; '1'; '0'; '0']
-            | SetIntensity -> ['X'; '0'; '2']
-            | SetRelativeIntensity -> ['X'; '0'; '3']
-            | SetShow -> ['X'; '0'; '4']
-        match value with
-        | Some value ->
+    let buildRequestCode request =
+        match request with
+        | TurnLightsOff ->
+            ['X'; '0'; '1'; '0'; '0']
+        | SetIntensity value ->
             Hexadecimal.toCharacters value
-            |> List.append baseCode
-        | None -> baseCode
+            |> List.append ['X'; '0'; '2']
+        | SetRelativeIntensity value ->
+            Hexadecimal.toCharacters value 
+            |> List.append ['X'; '0'; '3']
+        | SetShow value ->
+            Hexadecimal.toCharacters value
+            |> List.append ['X'; '0'; '4']
     let parseResponse characters =
         let integerValue =
             match characters with

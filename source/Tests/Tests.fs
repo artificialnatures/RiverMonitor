@@ -39,7 +39,7 @@ let applicationTests =
                                    ExecutionStrategy.GenerateTestSamples
                                    None
             let troubledState = {initialState with
-                                    Condition = Condition.Troubled
+                                    Condition = ConnectionCondition.Troubled
                                     PollInterval = TimeSpan.FromSeconds 1.0}
             let rec generateExpected initialInterval =
                 seq {
@@ -73,19 +73,19 @@ let applicationTests =
                                    ExecutionStrategy.GenerateTestSamples
                                    None
             let normalState = {initialState with
-                                    Condition = Condition.Normal
+                                    Condition = ConnectionCondition.Normal
                                     PollInterval = TimeSpan.FromSeconds 1.0}
             let expected =
                 [
-                    Condition.Normal
-                    Condition.Normal
-                    Condition.Troubled
-                    Condition.Troubled
-                    Condition.Failed
-                    Condition.Failed
+                    ConnectionCondition.Normal
+                    ConnectionCondition.Normal
+                    ConnectionCondition.Troubled
+                    ConnectionCondition.Troubled
+                    ConnectionCondition.Failed
+                    ConnectionCondition.Failed
                 ]
             let actual =
-                let now = System.DateTime.Now
+                let now = DateTime.Now
                 [
                     troubledThreshold * 0.25
                     troubledThreshold * 0.75
@@ -109,13 +109,13 @@ let hexadecimalTests =
             let testCases =
                 [
                     (['X'; '0'; '1'; '0'; '0'],
-                     ColorKinetics.buildRequestCode ColorKinetics.Request.TurnLightsOff None)
+                     ColorKinetics.buildRequestCode ColorKinetics.Request.TurnLightsOff)
                     (['X'; '0'; '2'; 'F'; 'F'],
-                     ColorKinetics.buildRequestCode ColorKinetics.Request.SetIntensity (Some 255))
+                     ColorKinetics.buildRequestCode (ColorKinetics.Request.SetIntensity 255))
                     (['X'; '0'; '3'; '2'; '0'],
-                     ColorKinetics.buildRequestCode ColorKinetics.Request.SetRelativeIntensity (Some 32))
+                     ColorKinetics.buildRequestCode (ColorKinetics.Request.SetRelativeIntensity 32))
                     (['X'; '0'; '4'; '0'; '3'],
-                     ColorKinetics.buildRequestCode ColorKinetics.Request.SetShow (Some 3))
+                     ColorKinetics.buildRequestCode (ColorKinetics.Request.SetShow 3))
                 ]
             let expected = List.map fst testCases
             let actual = List.map snd testCases

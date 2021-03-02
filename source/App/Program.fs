@@ -1,22 +1,26 @@
 open System.Threading
 open RiverMonitor
+open RiverMonitor.App
 open RiverMonitor.ApplicationState
 
 [<EntryPoint>]
 let main _ =
     let rec program state =
         let nextState =
-            state.RetrieveReading state
+            Application.chooseMode state
+            |> Application.verifyConnection
+            |> Application.retrieveReading
             |> Application.assessCondition
             |> Application.adjustPollInterval
             |> Application.displayCondition
             |> Application.logReading
         Thread.Sleep nextState.PollInterval
         program nextState
-    let device = MeadowDevice() :> Device |> Some
+    let debugMode = true
+    let device = MeadowF7Device.initialize debugMode
     let initialState = Application.initialState
-                           ExecutionEnvironment.CommandLine
-                           ExecutionStrategy.GenerateTestSamples
+                           ExecutionEnvironment.OnDevice
+                           ExecutionStrategy.RetrieveFromUSGS
                            device
     program initialState |> ignore
     0
