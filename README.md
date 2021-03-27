@@ -10,5 +10,22 @@ The software applications in this reposity fall into 2 broad categories: data re
 
 # Data sources
 
-Applications in this repository retrieve river flow data from USGS:
-https://waterdata.usgs.gov/nwis/inventory/?site_no=05331000&agency_cd=USGS
+Applications in this repository retrieve river flow data from USGS Water Services:
+
+ - [Retrieve Sample](https://waterdata.usgs.gov/nwis/inventory/?site_no=05331000&agency_cd=USGS)
+ - [Reference](https://waterservices.usgs.gov/)
+
+# Event Data
+
+In order to communicate with control devices, a small package of data (in JSON format) is assembled to represent the current measurement retrieved. The data looks like this:
+
+`{ 
+    "Site": "MISSISSIPPI RIVER AT ST. PAUL, MN"
+    "Time": "3/26/2021 4:15:00 PM",
+    "Temperature": 43.5,
+    "DischargeVolume": 26700.0,
+    "GageHeight": 5.55,
+    "Elevation": 689.32,
+    "Velocity": 2.48,
+    "IntensityLevel": 5 
+}`

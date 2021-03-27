@@ -18,7 +18,7 @@ let main _ =
         program nextState
     let initialState = Application.initialState
                            ExecutionEnvironment.CommandLine
-                           ExecutionStrategy.GenerateTestSamples
+                           ExecutionStrategy.RetrieveFromUSGS
                            None
     program {initialState with PollInterval = TimeSpan.FromSeconds 10.0} |> ignore
     0
