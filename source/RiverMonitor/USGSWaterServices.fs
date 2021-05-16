@@ -11,6 +11,7 @@ open FSharp.Data
 //This program uses the feed at:
 //let siteId = "05331000"
 //https://waterservices.usgs.gov/nwis/iv/?sites=05331000&period=P1D&format=json
+//For single readings: https://waterservices.usgs.gov/nwis/iv/?format=json&sites=05331000&parameterCd=00060&siteStatus=all
 type USGSWaterServicesResponse = JsonProvider<"../json/USGSWaterServices_Response_20210214.json">
 
 type USGSVariableName =
