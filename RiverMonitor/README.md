@@ -1,8 +1,41 @@
 # RiverMonitor
 
-A Particle project named RiverMonitor
+Retrieves river measurements and triggers lighting shows.
 
-## Welcome to your project!
+## Webhook
+
+A webhook needs to be set up on the Particle console: [https://console.particle.io/](https://console.particle.io/)
+
+### Webhook Settings:
+
+ - Event Name: mississippi-stpaul-discharge
+ - URL: https://waterservices.usgs.gov/nwis/iv/
+ - Request Type: GET
+ - Request Format: Query Parameters
+ - Device: Any
+ - Advanced Settings:
+   - Query Parameters:
+     - format = json
+     - sites = 05331000
+     - parameterCd = 00060
+     - siteStatus = all
+
+## Events
+
+Particle events are messages sent to the Particle cloud platform from the device, or from the cloud platform to the device. They are used to coordinate actions that should be taken or record information about what's happening.
+
+ - minneapolis-505FourthAveS-test
+    message from the cloud platform requesting that the device toggle testing mode
+ - minneapolis-505FourthAveS-discharge-measurement-trigger
+    message from the cloud platform requesting that the device initiate a measurement retrieval
+ - mississippi-stpaul-discharge multi-part 
+    message for the device containing a USGS Water Services discharge measurement, also used by the device to request this data
+ - minneapolis-505FourthAveS-discharge-measurement-retrieved 
+    message from the device indicating that a discharge measurement has been successfully retrieved
+ - minneapolis-505FourthAveS-set-lighting-program
+    message from the device indicating that the lighting program has been changed
+
+## Particle Platform Information
 
 Every new Particle project is composed of 3 important elements that you'll see have been created in your project directory for RiverMonitor.
 

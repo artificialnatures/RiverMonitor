@@ -1,87 +1,104 @@
-#include <JsonParserGeneratorRK.h>
-JsonParser jsonParser;
-//Discharge values for Mississippi River at St. Paul, MN in cubic feet per second
-int upperDischargeBounds[] = 
-{
-    7000,    //Level 1
-    10000,   //Level 2
-    15000,   //Level 3
-    20000,   //Level 4
-    30000,   //Level 5
-    40000,   //Level 6
-    50000,   //Level 7
-    60000,   //Level 8
-    75000,   //Level 9
-    1000000  //Level 10
-};
-int lightProgram = 1; //The program that has been sent to the lighting controller (1 through 10)
+#include "Constants.h"
+#include "MessageReceiver.h"
+#include "Lighting.h"
+#include "ColorKinetics.h"
+
+DeviceState state = DeviceState::Started;
 time_t timeAtLastSuccessfulRetrieval = 0;
-time_t timeAtPreviousRequest = 0;
-time_t secondsBetweenRetrievals = 60;
-time_t secondsBeforeRequestFails = 10;
-bool measurementHasBeenRequested = false;
+MessageReceiver * messageReceiver = NULL;
+Lighting * lighting = new Lighting();
+ColorKinetics * colorKinetics = new ColorKinetics();
+
+void toggleTesting(char *event, char *data)
+{
+    //write a tester...
+    state = DeviceState::Testing;
+}
+
+void triggerRequest(char *event, char *data)
+{
+    RequestMeasurement();
+}
+
+void receiveMessagePacket(char *event, char *data)
+{
+    if (messageReceiver != NULL)
+    {
+        MessageReceivedResult result = messageReceiver->ReceivePacket(event, data);
+        switch (result)
+        {
+            case MessageReceivedResult::Incomplete:
+                state = DeviceState::ReceivingMeasurement;
+                break;
+            case MessageReceivedResult::Complete:
+                state = DeviceState::MeasurementReceived;
+                break;
+            case MessageReceivedResult::Failed:
+                Particle.publish("minneapolis-505FourthAveS-discharge-measurement-retrieved", "Failed to retrieve discharge measurement.", PRIVATE);
+                state = DeviceState::Waiting;
+                break;
+        }
+    }
+}
+
+void RequestMeasurement()
+{
+    if (state == DeviceState::Waiting)
+    {
+        messageReceiver = new MessageReceiver();
+        Particle.publish("hook-response/mississippi-stpaul-discharge", "", PRIVATE);
+        state = DeviceState::MeasurementRequested;
+    }
+}
 
 void setup() 
 {
-    Particle.subscribe("hook-response/mississippi-stpaul-discharge", receivedRiverMeasurement, MY_DEVICES); //Call the receivedRiverMeasurement function when data is received
-    RGB.control(true); //Use the onboard LED to signal status
-    RGB.color(255, 0, 0); //Display red to indicate that the board is initializing
-}
-
-void requestRiverMeasurement()
-{
-    /* Request the most recent river measurement from the mississippi-stpaul-discharge webhook
-     * Defined in the Particle web console: https://console.particle.io/
-     * Retrieves data from USGS Water Services, e.g. https://waterservices.usgs.gov/nwis/iv/?format=json&sites=05331000&parameterCd=00060&siteStatus=all
-     */
-    Particle.publish("mississippi-stpaul-discharge", "", PRIVATE);
-    RGB.color(0, 128, 128); //indicate that a request has been made
-    timeAtPreviousRequest = Time.now();
-    measurementHasBeenRequested = true;
-}
-
-const char * extractDischargeMeasurement(const char *data)
-{
-    /* Parse the JSON response from USGS Water Services
-     * See an example: https://waterservices.usgs.gov/nwis/iv/?format=json&sites=05331000&parameterCd=00060&siteStatus=all
-     */
-    return jsonParser.getReference().key("value").key("timeSeries").index(0).key("values").index(0).key("value").index(0).key("value").valueString();
-}
-
-void receivedRiverMeasurement(const char *event, const char *data) 
-{
-    //Handle multi-part responses. Response packets from Particle webhooks are limited to 512 bytes.
-    int responseIndex = 0;
-	const char *slashOffset = strrchr(event, '/');
-	if (slashOffset) 
-	{
-		responseIndex = atoi(slashOffset + 1);
-	}
-	if (responseIndex == 0) 
-	{
-		jsonParser.clear();
-	}
-	jsonParser.addString(data);
-	if (jsonParser.parse()) 
-	{
-		//All parts have been received
-		String dischargeMeasurementText = extractDischargeMeasurement(data);
-        Particle.publish("minneapolis-505FourthAveS-discharge-measurement-retrieved", dischargeMeasurementText); //record that a measurement was retrieved
-        int dischargeMeasurement = dischargeMeasurementText.toInt();
-        //TODO: Determine which level and  program to set
-        RGB.color(0, 255, 0); //indicate that the measurement was retrieved
-        timeAtLastSuccessfulRetrieval = Time.now();
-        measurementHasBeenRequested = false;
-	}
+    Particle.subscribe("minneapolis-505FourthAveS-test", toggleTesting, MY_DEVICES);
+    Particle.subscribe("minneapolis-505FourthAveS-discharge-measurement-trigger", triggerRequest, MY_DEVICES);
+    Particle.subscribe("hook-response/mississippi-stpaul-discharge", receiveMessagePacket, MY_DEVICES);
+    //Particle.publish("minneapolis-505FourthAveS-discharge-measurement-retrieved", String::format("Retrieved discharge measurement of: %s", "0"));
+    //Particle.publish("minneapolis-505FourthAveS-lighting-show", String::format("Setting lighting show to: %d", 1));
 }
 
 void loop() 
 {
-    bool previousRequestFailed = measurementHasBeenRequested && Time.now() - timeAtPreviousRequest > secondsBeforeRequestFails;
-    bool shouldMakeNextRequest = Time.now() - timeAtLastSuccessfulRetrieval > secondsBetweenRetrievals;
-    if (previousRequestFailed || shouldMakeNextRequest)
+    switch (state)
     {
-        requestRiverMeasurement();
+    case DeviceState::Started:
+        state = DeviceState::Waiting;
+        break;
+    case DeviceState::Waiting:
+        if (Time.now() > timeAtLastSuccessfulRetrieval + SecondsBetweenRetrievals)
+        {
+            RequestMeasurement();
+        }
+        break;
+    case DeviceState::MeasurementRequested:
+        break;
+    case DeviceState::ReceivingMeasurement:
+        break;
+    case DeviceState::MeasurementReceived:
+        int measurement = messageReceiver->ParseMeasurement();
+        Particle.publish("minneapolis-505FourthAveS-discharge-measurement-retrieved", String::format("Retrieved discharge measurement of: %d", measurement), PRIVATE);
+        LightingState lightingState = lighting->Update(measurement);
+        if (lightingState.Result == LightingResult::Updated)
+        {
+            state = DeviceState::SettingLightingShow;
+        }
+        else
+        {
+            state = DeviceState::Waiting;
+        }
+        break;
+    case DeviceState::SettingLightingShow:
+        LightingState lightingState = lighting->GetState();
+        ColorKineticsResult result = colorKinetics->SendRequest(ColorKineticsRequest::SetShow, lightingState.Show);
+        Particle.publish("minneapolis-505FourthAveS-lighting-show", String::format("Setting lighting show to: %d", lightingState.Show));
+        state = DeviceState::Waiting;
+        break;
+    case DeviceState::Testing:
+        //update test cycle...
+        break;
     }
     delay(1000); //Loop every second
 }
