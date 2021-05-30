@@ -1,5 +1,6 @@
 #include <JsonParserGeneratorRK.h>
 JsonParser parser;
+SerialLogHandler logHandler;
 
 enum class DeviceState
 {
@@ -10,6 +11,13 @@ enum class DeviceState
     MeasurementReceived,
     Testing
 };
+
+//EVENTS
+const char * EventToggleTesting = "minneapolis-505FourthAveS-test";
+const char * EventTriggerMeasurement = "minneapolis-505FourthAveS-discharge-measurement-trigger";
+const char * EventMeasurementRequest = "mississippi-stpaul-discharge";
+const char * EventMeasurementReceived = "hook-response/mississippi-stpaul-discharge";
+const char * EventReport = "minneapolis-505FourthAveS-info";
 
 //Discharge values for Mississippi River at St. Paul, MN in cubic feet per second
 const int UpperDischargeBounds[] = 
@@ -25,12 +33,6 @@ const int UpperDischargeBounds[] =
     75000,   //Level 9
     1000000  //Level 10
 };
-
-#define SerialBaudRate 9600
-#define SerialDataBits 8
-#define SerialParity false
-#define SerialStopBits 1
-#define SerialFlowControl false
 
 enum class ColorKineticsRequest
 {
@@ -73,13 +75,15 @@ const time_t SecondsBetweenTestCycles = 30;
 time_t timeAtRequest = 0;
 time_t timeAtLastSuccessfulRetrieval = 0;
 time_t timeAtLastTestCycle = 0;
+int dischargeMeasurement = 0;
 int lightingShow = 0;
 
 void setup() 
 {
-    Particle.subscribe("minneapolis-505FourthAveS-test", toggleTesting, MY_DEVICES);
-    Particle.subscribe("minneapolis-505FourthAveS-discharge-measurement-trigger", triggerRequest, MY_DEVICES);
-    Particle.subscribe("hook-response/mississippi-stpaul-discharge", receiveMessagePacket, MY_DEVICES);
+    InitializeSerialConnection();
+    Subscribe(EventToggleTesting, ToggleTesting);
+    Subscribe(EventTriggerMeasurement, TriggerRequest);
+    Subscribe(EventMeasurementReceived, ReceiveMessagePacket);
 }
 
 void loop() 
@@ -88,7 +92,6 @@ void loop()
     {
     case DeviceState::Started:
         state = DeviceState::Waiting;
-        Particle.publish("minneapolis-505FourthAveS-info", "Started.", PRIVATE);
         break;
     case DeviceState::Waiting:
         if (Time.now() > timeAtLastSuccessfulRetrieval + SecondsBetweenRetrievals)
@@ -97,12 +100,13 @@ void loop()
         }
         break;
     case DeviceState::MeasurementRequested:
+        CheckMeasurementTimeout();
         break;
     case DeviceState::ReceivingMeasurement:
+        CheckMeasurementTimeout();
         break;
     case DeviceState::MeasurementReceived:
-        timeAtLastSuccessfulRetrieval = Time.now();
-        UpdateLightingState();
+        UpdateLightingShow();
         break;
     case DeviceState::Testing:
         CycleTestShow();
@@ -111,16 +115,48 @@ void loop()
     delay(1000); //Loop every second
 }
 
+void InitializeSerialConnection()
+{
+    //ColorKinetics: 9600 baud, 8 data bits, no parity, 1 stop bit, no flow control
+    Serial1.begin(9600, SERIAL_8N1);
+}
+
+void SendSerialCommand(String command, int value)
+{
+    //convert to hex and append to command
+    char hexValue[3] = {'0', '0', 0};
+    sprintf(hexValue, "%X", value);
+    String serialCommand = String::format("%s%s", command, hexValue);
+    Log.info("Sending serial command: %s", serialCommand);
+    //Serial1.write(serialCommand);
+    //String serialResponse = Serial1.readString();
+    //Log.info("Serial response: %s", serialResponse);
+}
+
+void Subscribe(const char * eventName, EventHandler handler)
+{
+    Particle.subscribe(eventName, handler, MY_DEVICES);
+    Log.info("Subscribed to event: %s", eventName);
+}
+
+void Publish(const char * eventName, const char * eventData)
+{
+    Particle.publish(eventName, eventData, MY_DEVICES);
+    Log.info("Published event: %s \nwith data: %s", eventName, eventData);
+}
+
 //callback for event: minneapolis-505FourthAveS-test
-void toggleTesting(const char *event, const char *data)
+void ToggleTesting(const char *event, const char *data)
 {
     if (state == DeviceState::Testing)
     {
         state = DeviceState::Waiting;
+        //TODO: tear down testing
     }
     else
     {
         state = DeviceState::Testing;
+        //TODO: initialize testing
     }
 }
 
@@ -133,35 +169,15 @@ void CycleTestShow()
         {
             lightingShow = 1;
         }
-        SetLightingShow();
+        Log.info("Testing lighting show %d.", lightingShow);
         timeAtLastTestCycle = Time.now();
     }
 }
 
 //callback for event: minneapolis-505FourthAveS-discharge-measurement-trigger
-void triggerRequest(const char *event, const char *data)
+void TriggerRequest(const char *event, const char *data)
 {
     RequestMeasurement();
-}
-
-//callback for event: hook-response/mississippi-stpaul-discharge
-void receiveMessagePacket(const char *event, const char *data)
-{
-    parser.addChunkedData(event, data);
-    if (parser.parse())
-    {
-        state = DeviceState::MeasurementReceived;
-        timeAtLastSuccessfulRetrieval = Time.now();
-    }
-    else
-    {
-        state = DeviceState::ReceivingMeasurement;
-    }
-    if (Time.now() - timeAtRequest > SecondsBeforeRequestFails)
-    {
-        Particle.publish("minneapolis-505FourthAveS-info", "Failed to retrieve discharge measurement.", PRIVATE);
-        state = DeviceState::Waiting;
-    }
 }
 
 void RequestMeasurement()
@@ -170,24 +186,47 @@ void RequestMeasurement()
     {
         parser.clear();
         timeAtRequest = Time.now();
-        Particle.publish("hook-response/mississippi-stpaul-discharge", "", PRIVATE); //start a request via Particl webhook to retrieve new USGS Water Service data
+        Publish(EventMeasurementRequest, ""); //start a request via Particle webhook to retrieve new USGS Water Service data
         state = DeviceState::MeasurementRequested;
     }
 }
 
-void UpdateLightingState()
+//callback for event: hook-response/mississippi-stpaul-discharge
+void ReceiveMessagePacket(const char *event, const char *data)
 {
-    /* Parse the JSON response from USGS Water Services
-     * See an example: https://waterservices.usgs.gov/nwis/iv/?format=json&sites=05331000&parameterCd=00060&siteStatus=all
-     */
-    String measurementText = parser.getReference().key("value").key("timeSeries").index(0).key("values").index(0).key("value").index(0).key("value").valueString();
-    int measurement = measurementText.toInt();
-    Particle.publish("minneapolis-505FourthAveS-info", String::format("Retrieved discharge measurement of: %d", measurement), PRIVATE);
-    int show = FindLightingShow(measurement);
-    if (lightingShow != show)
+    Log.info("Received measurement packet from event: %s\n%s\n", event, data);
+    parser.addChunkedData(event, data);
+    if (parser.parse())
     {
-        lightingShow = show;
-        SetLightingShow();
+        Log.info("Received all parts of measurement data.");
+        /* Parse the JSON response from USGS Water Services
+         * See an example: https://waterservices.usgs.gov/nwis/iv/?format=json&sites=05331000&parameterCd=00060&siteStatus=all
+         */
+        String measurementText = parser.getReference().key("value").key("timeSeries").index(0).key("values").index(0).key("value").index(0).key("value").valueString();
+        dischargeMeasurement = measurementText.toInt();
+        //Publish(EventReport, String::format("Retrieved discharge measurement of: %d", measurement));
+        Log.info("Retrieved discharge measurement of: %d", dischargeMeasurement);
+        state = DeviceState::MeasurementReceived;
+        timeAtLastSuccessfulRetrieval = Time.now();
+    }
+    else
+    {
+        Log.info("Waiting for the rest of the measurement data.");
+        state = DeviceState::ReceivingMeasurement;
+    }
+}
+
+void CheckMeasurementTimeout()
+{
+    bool hasTimedOut = (state == DeviceState::ReceivingMeasurement 
+                        || state == DeviceState::MeasurementRequested)
+                        && Time.now() - timeAtRequest > SecondsBeforeRequestFails;
+        
+    if (hasTimedOut)
+    {
+        //Publish(EventReport, "Measurement request timed out.");
+        Log.info("Measurement request timed out.");
+        state = DeviceState::Waiting;
     }
 }
 
@@ -204,8 +243,13 @@ int FindLightingShow(int dischargeMeasurement)
     return 1;
 }
 
-void SetLightingShow()
+void UpdateLightingShow()
 {
-    //TODO: set show on color kinetics...
-    Particle.publish("minneapolis-505FourthAveS-info", String::format("Set lighting show to: %d", lightingShow));
+    int show = FindLightingShow(dischargeMeasurement);
+    if (lightingShow != show)
+    {
+        lightingShow = show;
+        Log.info("Set lighting show to: %d", lightingShow);
+        SendSerialCommand(ColorKineticsCodes::SetShow, lightingShow);
+    }
 }
