@@ -55,17 +55,17 @@ enum class ColorKineticsResponse
 namespace ColorKineticsCodes
 {
     //Requests
-    const String TurnLightsOff = "X01";
-    const String SetIntensity = "X02";
-    const String SetRelativeIntensity = "X03";
-    const String SetShow = "X04";
+    const char * TurnLightsOff = "X01";
+    const char * SetIntensity = "X02";
+    const char * SetRelativeIntensity = "X03";
+    const char * SetShow = "X04";
     //Responses
-    const String ModeWasSet = "Y00";
-    const String LightsAreOff = "Y01";
-    const String IntensityWasSet = "Y02";
-    const String NothingWasSet = "Y03";
-    const String ShowWasSet = "Y04";
-    const String ErrorOccurred = "Y0F";
+    const char * ModeWasSet = "Y00";
+    const char * LightsAreOff = "Y01";
+    const char * IntensityWasSet = "Y02";
+    const char * NothingWasSet = "Y03";
+    const char * ShowWasSet = "Y04";
+    const char * ErrorOccurred = "Y0F";
 }
 
 DeviceState state = DeviceState::Started;
@@ -84,6 +84,10 @@ void setup()
     Subscribe(EventToggleTesting, ToggleTesting);
     Subscribe(EventTriggerMeasurement, TriggerRequest);
     Subscribe(EventMeasurementReceived, ReceiveMessagePacket);
+    for (int value = 0; value < 256; value++)
+    {
+        SendSerialCommand(ColorKineticsCodes::SetShow, value);
+    }
 }
 
 void loop() 
@@ -121,15 +125,14 @@ void InitializeSerialConnection()
     Serial1.begin(9600, SERIAL_8N1);
 }
 
-void SendSerialCommand(String command, int value)
+void SendSerialCommand(const char * command, int value)
 {
-    //convert to hex and append to command
-    char hexValue[3] = {'0', '0', 0};
-    sprintf(hexValue, "%X", value);
-    String serialCommand = String::format("%s%s", command, hexValue);
+    char serialCommand[6];
+    sprintf(serialCommand, "%s%02X", command, value);
     Log.info("Sending serial command: %s", serialCommand);
     //Serial1.write(serialCommand);
     //String serialResponse = Serial1.readString();
+    //(int)strtol(hexstring, NULL, 16); //convert hexadecimal string to integer
     //Log.info("Serial response: %s", serialResponse);
 }
 
