@@ -15,6 +15,7 @@ enum class DeviceState
 //EVENTS
 const char * EventToggleTesting = "minneapolis-505FourthAveS-test";
 const char * EventTriggerMeasurement = "minneapolis-505FourthAveS-discharge-measurement-trigger";
+const char * EventLightingCommand = "minneapolis-505FourthAveS-lighting-command";
 const char * EventMeasurementRequest = "mississippi-stpaul-discharge";
 const char * EventMeasurementReceived = "hook-response/mississippi-stpaul-discharge";
 const char * EventReport = "minneapolis-505FourthAveS-info";
@@ -34,39 +35,50 @@ const int UpperDischargeBounds[] =
     1000000  //Level 10
 };
 
-enum class ColorKineticsRequest
-{
-    TurnLightsOff,
-    SetIntensity,
-    SetRelativeIntensity,
-    SetShow
-};
+//ColorKinetics Requests
+#define TurnLightsOff 0
+#define SetIntensity 1
+#define SetRelativeIntensity 2
+#define SetShow 3
+//ColorKinetics Responses
+#define ModeWasSet 4
+#define LightsAreOff 5
+#define IntensityWasSet 6
+#define NothingWasSet 7
+#define ShowWasSet 8
+#define ErrorOccurred 9
 
-enum class ColorKineticsResponse
-{
-    ModeWasSet,
-    LightsAreOff,
-    IntensityWasSet,
-    NothingWasSet,
-    ShowWasSet,
-    ErrorOccurred
-};
-
-namespace ColorKineticsCodes
+const char * ColorKineticsCodeNames[10] =
 {
     //Requests
-    const char * TurnLightsOff = "X01";
-    const char * SetIntensity = "X02";
-    const char * SetRelativeIntensity = "X03";
-    const char * SetShow = "X04";
+    "TurnLightsOff",
+    "SetIntensity",
+    "SetRelativeIntensity",
+    "SetShow",
     //Responses
-    const char * ModeWasSet = "Y00";
-    const char * LightsAreOff = "Y01";
-    const char * IntensityWasSet = "Y02";
-    const char * NothingWasSet = "Y03";
-    const char * ShowWasSet = "Y04";
-    const char * ErrorOccurred = "Y0F";
-}
+    "ModeWasSet",
+    "LightsAreOff",
+    "IntensityWasSet",
+    "NothingWasSet",
+    "ShowWasSet",
+    "ErrorOccurred"
+};
+
+const char * ColorKineticsCodes[10] =
+{
+    //Requests
+    "X01", //TurnLightsOff
+    "X02", //SetIntensity
+    "X03", //SetRelativeIntensity
+    "X04", //SetShow
+    //Responses
+    "Y00", //ModeWasSet
+    "Y01", //LightsAreOff
+    "Y02", //IntensityWasSet
+    "Y03", //NothingWasSet
+    "Y04", //ShowWasSet
+    "Y0F" //ErrorOccurred
+};
 
 DeviceState state = DeviceState::Started;
 const time_t SecondsBetweenRetrievals = 3600;
@@ -84,10 +96,7 @@ void setup()
     Subscribe(EventToggleTesting, ToggleTesting);
     Subscribe(EventTriggerMeasurement, TriggerRequest);
     Subscribe(EventMeasurementReceived, ReceiveMessagePacket);
-    for (int value = 0; value < 256; value++)
-    {
-        SendSerialCommand(ColorKineticsCodes::SetShow, value);
-    }
+    Subscribe(EventLightingCommand, TriggerLightingCommand);
 }
 
 void loop() 
@@ -119,21 +128,84 @@ void loop()
     delay(1000); //Loop every second
 }
 
+void TestCommandEncodingAndParsing()
+{
+    int values[5] = {0, 10, 105, 220, 255}; //00, 0A, 69, DC, FF
+    for (int command = 0; command < 10; command++)
+    {
+        Log.info("Testing command %s", ColorKineticsCodeNames[command]);
+        for (int valueIndex = 0; valueIndex < 5; valueIndex++)
+        {
+            String serialCommand = EncodeSerialCommand(command, values[valueIndex]);
+            Log.info("Encoded command [%s, %d] as: %s", ColorKineticsCodeNames[command], values[valueIndex], serialCommand.c_str());
+            PrintSerialCommand(serialCommand);
+        }
+    }
+}
+
 void InitializeSerialConnection()
 {
     //ColorKinetics: 9600 baud, 8 data bits, no parity, 1 stop bit, no flow control
     Serial1.begin(9600, SERIAL_8N1);
+    Serial1.setTimeout(1000); //try to receive data for 1 second
 }
 
-void SendSerialCommand(const char * command, int value)
+const String EncodeSerialCommand(int command, int value)
 {
-    char serialCommand[6];
-    sprintf(serialCommand, "%s%02X", command, value);
-    Log.info("Sending serial command: %s", serialCommand);
-    //Serial1.write(serialCommand);
-    //String serialResponse = Serial1.readString();
-    //(int)strtol(hexstring, NULL, 16); //convert hexadecimal string to integer
-    //Log.info("Serial response: %s", serialResponse);
+    char serialCommand[10];
+    sprintf(serialCommand, "%s%02X", ColorKineticsCodes[command], value);
+    Log.info("Encoded command [%s, %d] as: %s", ColorKineticsCodeNames[command], value, serialCommand);
+    return String::format("%s", serialCommand);
+}
+
+int FindCommand(String serialResponse)
+{
+    if (serialResponse.length() < 5) return ErrorOccurred;
+    for (uint8_t command = 0; command < arraySize(ColorKineticsCodes); command++)
+    {
+        if (serialResponse.startsWith(ColorKineticsCodes[command])) return command;
+    }
+    return ErrorOccurred;
+}
+
+int FindCommandByName(String commandName)
+{
+    for (uint8_t command = 0; command < arraySize(ColorKineticsCodes); command++)
+    {
+        if (commandName.equals(ColorKineticsCodeNames[command])) return command;
+    }
+    return ErrorOccurred;
+}
+
+int ParseResponseValue(String serialResponse)
+{
+    if (serialResponse.length() < 5) return 0;
+    String hexValue = serialResponse.substring(3); //take last 2 characters of 5 character serialResponse
+    return (int)strtol(hexValue, 0, 16); //convert hexadecimal string to integer value
+}
+
+void PrintSerialCommand(String serialCommand)
+{
+    Log.info("Parsed serial command: %s with value: %d", ColorKineticsCodeNames[FindCommand(serialCommand)], ParseResponseValue(serialCommand));
+}
+
+void SendSerialCommand(int command, int value)
+{
+    const char * serialCommand = EncodeSerialCommand(command, value).c_str();
+    Log.info("Sending command to serial device: %s", serialCommand);
+    Publish(EventReport, String::format("Sending ColorKinetics command: %s with value = %d", ColorKineticsCodeNames[command], value));
+    Serial1.write(serialCommand);
+    Serial1.flush(); //ensure serialCommand has been sent to ColorKinetics device
+    ReceiveSerialResponse();
+}
+
+void ReceiveSerialResponse()
+{
+    String response = Serial1.readString();
+    const char * responseAction = ColorKineticsCodeNames[FindCommand(response)];
+    const int responseValue = ParseResponseValue(response);
+    Log.info(String::format("ColorKinetics Response: %s with value = %d", responseAction, responseValue));
+    Publish(EventReport, String::format("ColorKinetics Response: %s with value = %d", responseAction, responseValue));
 }
 
 void Subscribe(const char * eventName, EventHandler handler)
@@ -154,12 +226,11 @@ void ToggleTesting(const char *event, const char *data)
     if (state == DeviceState::Testing)
     {
         state = DeviceState::Waiting;
-        //TODO: tear down testing
     }
     else
     {
+        lightingShow = 0;
         state = DeviceState::Testing;
-        //TODO: initialize testing
     }
 }
 
@@ -174,7 +245,22 @@ void CycleTestShow()
         }
         Log.info("Testing lighting show %d.", lightingShow);
         timeAtLastTestCycle = Time.now();
+        SendSerialCommand(SetShow, lightingShow);
     }
+}
+
+//callback for event: minneapolis-505FourthAveS-lighting-command
+//Commands should be in the form: CommandName:Value
+//CommandName should be one of the string values in the 
+//e.g. SetShow:5 or TurnLightsOff:0
+void TriggerLightingCommand(const char *event, const char *data)
+{
+    String encodedCommand = String(data);
+    String commandName = encodedCommand.substring(0, encodedCommand.indexOf(":"));
+    int command = FindCommandByName(commandName);
+    if (command > SetShow) return;
+    int value = encodedCommand.substring(encodedCommand.indexOf(":") + 1).toInt();
+    SendSerialCommand(command, value);
 }
 
 //callback for event: minneapolis-505FourthAveS-discharge-measurement-trigger
@@ -207,7 +293,7 @@ void ReceiveMessagePacket(const char *event, const char *data)
          */
         String measurementText = parser.getReference().key("value").key("timeSeries").index(0).key("values").index(0).key("value").index(0).key("value").valueString();
         dischargeMeasurement = measurementText.toInt();
-        //Publish(EventReport, String::format("Retrieved discharge measurement of: %d", measurement));
+        Publish(EventReport, String::format("Retrieved discharge measurement of: %d", dischargeMeasurement));
         Log.info("Retrieved discharge measurement of: %d", dischargeMeasurement);
         state = DeviceState::MeasurementReceived;
         timeAtLastSuccessfulRetrieval = Time.now();
@@ -227,7 +313,7 @@ void CheckMeasurementTimeout()
         
     if (hasTimedOut)
     {
-        //Publish(EventReport, "Measurement request timed out.");
+        Publish(EventReport, "Measurement request timed out.");
         Log.info("Measurement request timed out.");
         state = DeviceState::Waiting;
     }
@@ -253,6 +339,6 @@ void UpdateLightingShow()
     {
         lightingShow = show;
         Log.info("Set lighting show to: %d", lightingShow);
-        SendSerialCommand(ColorKineticsCodes::SetShow, lightingShow);
+        SendSerialCommand(SetShow, lightingShow);
     }
 }
