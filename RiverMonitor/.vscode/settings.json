@@ -7,7 +7,6 @@
         "locale": "cpp",
         "string": "cpp"
     },
-    "particle.targetDevice": "synthings1",
     "particle.firmwareVersion": "2.1.0",
-    "particle.targetPlatform": "argon"
+    "particle.targetPlatform": "boron"
 }
