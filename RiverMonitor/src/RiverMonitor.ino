@@ -266,6 +266,7 @@ void TriggerLightingCommand(const char *event, const char *data)
 //callback for event: minneapolis-505FourthAveS-discharge-measurement-trigger
 void TriggerRequest(const char *event, const char *data)
 {
+    state = DeviceState::Waiting;
     RequestMeasurement();
 }
 
