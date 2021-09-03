@@ -90,17 +90,33 @@ time_t timeAtLastTestCycle = 0;
 int dischargeMeasurement = 0;
 int lightingShow = 0;
 
+const String testCodes[10] = 
+{
+    "X0401",
+    "X0402",
+    "X0403",
+    "X0404",
+    "X0405",
+    "X0406",
+    "X0407",
+    "X0408",
+    "X0409",
+    "X0410"
+};
+uint testCodeIndex = 0;
+
 void setup() 
 {
     InitializeSerialConnection();
-    Subscribe(EventToggleTesting, ToggleTesting);
-    Subscribe(EventTriggerMeasurement, TriggerRequest);
-    Subscribe(EventMeasurementReceived, ReceiveMessagePacket);
-    Subscribe(EventLightingCommand, TriggerLightingCommand);
+    //Subscribe(EventToggleTesting, ToggleTesting);
+    //Subscribe(EventTriggerMeasurement, TriggerRequest);
+    //Subscribe(EventMeasurementReceived, ReceiveMessagePacket);
+    //Subscribe(EventLightingCommand, TriggerLightingCommand);
 }
 
 void loop() 
 {
+    /*
     switch (state)
     {
     case DeviceState::Started:
@@ -126,6 +142,21 @@ void loop()
         break;
     }
     delay(1000); //Loop every second
+    */
+    String testCode = testCodes[testCodeIndex];
+    Log.info(String::format("Sending code: %s", testCode));
+    Serial1.write(testCode.c_str());
+    Serial1.flush(); //ensure serialCommand has been sent to ColorKinetics device
+    Log.info(String::format("Raw Response: %s", Serial1.readString()));
+    if (testCodeIndex < 9)
+    {
+        testCodeIndex++;
+    }
+    else
+    {
+        testCodeIndex = 0;
+    }
+    delay(15000);
 }
 
 void TestCommandEncodingAndParsing()
@@ -147,12 +178,12 @@ void InitializeSerialConnection()
 {
     //ColorKinetics: 9600 baud, 8 data bits, no parity, 1 stop bit, no flow control
     Serial1.begin(9600, SERIAL_8N1);
-    Serial1.setTimeout(1000); //try to receive data for 1 second
+    Serial1.setTimeout(1000); //try to receive data for 1 seconds
 }
 
 const String EncodeSerialCommand(int command, int value)
 {
-    char serialCommand[10];
+    char serialCommand[5];
     sprintf(serialCommand, "%s%02X", ColorKineticsCodes[command], value);
     Log.info("Encoded command [%s, %d] as: %s", ColorKineticsCodeNames[command], value, serialCommand);
     return String::format("%s", serialCommand);
@@ -160,7 +191,6 @@ const String EncodeSerialCommand(int command, int value)
 
 int FindCommand(String serialResponse)
 {
-    if (serialResponse.length() < 5) return ErrorOccurred;
     for (uint8_t command = 0; command < arraySize(ColorKineticsCodes); command++)
     {
         if (serialResponse.startsWith(ColorKineticsCodes[command])) return command;
@@ -193,7 +223,7 @@ void SendSerialCommand(int command, int value)
 {
     const char * serialCommand = EncodeSerialCommand(command, value).c_str();
     Log.info("Sending command to serial device: %s", serialCommand);
-    Publish(EventReport, String::format("Sending ColorKinetics command: %s with value = %d", ColorKineticsCodeNames[command], value));
+    Publish(EventReport, String::format("Sending ColorKinetics command: %s with value = %d (%s)", ColorKineticsCodeNames[command], value, serialCommand));
     Serial1.write(serialCommand);
     Serial1.flush(); //ensure serialCommand has been sent to ColorKinetics device
     ReceiveSerialResponse();
@@ -202,10 +232,11 @@ void SendSerialCommand(int command, int value)
 void ReceiveSerialResponse()
 {
     String response = Serial1.readString();
+    Log.info(String::format("Raw Response: %s", response.c_str()));
     const char * responseAction = ColorKineticsCodeNames[FindCommand(response)];
     const int responseValue = ParseResponseValue(response);
-    Log.info(String::format("ColorKinetics Response: %s with value = %d", responseAction, responseValue));
-    Publish(EventReport, String::format("ColorKinetics Response: %s with value = %d", responseAction, responseValue));
+    Log.info(String::format("ColorKinetics Response: %s with value = %d (%s)", responseAction, responseValue, response.c_str()));
+    Publish(EventReport, String::format("ColorKinetics Response: %s with value = %d (%s)", responseAction, responseValue, response.c_str()));
 }
 
 void Subscribe(const char * eventName, EventHandler handler)
