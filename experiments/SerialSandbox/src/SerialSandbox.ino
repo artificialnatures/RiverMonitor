@@ -11,7 +11,20 @@ const String testCodes[10] =
     "X0407",
     "X0408",
     "X0409",
-    "X0410"
+    "X040A"
+};
+const char testCharacterCodes[10][5] = 
+{
+    {'X', '0', '4', '0', '1'},
+	{'X', '0', '4', '0', '2'},
+	{'X', '0', '4', '0', '3'},
+	{'X', '0', '4', '0', '4'},
+	{'X', '0', '4', '0', '5'},
+	{'X', '0', '4', '0', '6'},
+	{'X', '0', '4', '0', '7'},
+	{'X', '0', '4', '0', '8'},
+	{'X', '0', '4', '0', '9'},
+	{'X', '0', '4', '0', 'A'}
 };
 uint testCodeIndex = 0;
 
@@ -38,11 +51,17 @@ void EchoLoop() {
 }
 
 void ControllerLoop() {
+	/*
 	String testCode = testCodes[testCodeIndex];
 	const char * serialMessage = testCode.c_str();
 	Log.info("Sending code: %s", serialMessage);
 	size_t bytesWritten = Serial1.write(serialMessage);
 	Log.info("Wrote %i bytes.", bytesWritten);
+	*/
+	for (int i = 0; i < 5; i++)
+	{
+		Serial1.write(testCharacterCodes[testCodeIndex][i]);
+	}
 	String response = Serial1.readString();
 	Log.info("Raw Response: %s", response.c_str());
 	if (testCodeIndex < 9)

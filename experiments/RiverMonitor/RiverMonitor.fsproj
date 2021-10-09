@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Hexadecimal.fs" />
     <Compile Include="ColorKinetics.fs" />
     <Compile Include="USGSWaterServices.fs" />
     <Compile Include="Device.fs" />
+    <Compile Include="SerialDevice.fs" />
     <Compile Include="ApplicationState.fs" />
     <Compile Include="TestData.fs" />
     <Compile Include="Application.fs" />
@@ -18,5 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="3.3.2" />
+    <PackageReference Include="System.IO.Ports" Version="5.0.1" />
   </ItemGroup>
 </Project>
