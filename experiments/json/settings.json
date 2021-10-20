@@ -1,0 +1,8 @@
+{
+  "ExecutionStrategy":{"Case":"RetrieveFromUSGS"},
+  "USGSUri":"https://waterservices.usgs.gov/nwis/iv/?sites=05331000&period=P1D&format=json",
+  "SerialPort":"/dev/ttyUSB0",
+  "MinutesBetweenRetrievals":0.5,
+  "OpeningTime": "06:00:00",
+  "ClosingTime": "23:00:00"
+}

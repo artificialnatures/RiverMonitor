@@ -1,27 +1,36 @@
 open System
 open System.Threading
 open RiverMonitor
-open RiverMonitor.ApplicationState
+open Hours
 
 [<EntryPoint>]
 let main _ =
-    Console.WriteLine "Serial Ports:"
+    Console.WriteLine "Available Serial Ports:"
     for port in SerialDevice.listPorts () do Console.WriteLine $"  - {port}"
-    let device = SerialDevice("/dev/tty.URT1") :> Device |> Some
-    let rec program state =
-        let nextState =
-            Application.chooseMode state
-            |> Application.verifyConnection
-            |> Application.retrieveReading
+    Console.WriteLine "Specify settings in settings.json"
+    let settings = Settings.load ()
+    let device = SerialDevice.create settings.SerialPort
+    let evaluate state =
+        let now = DateTime.Now.TimeOfDay
+        if now.isWithin settings.OpeningTime settings.ClosingTime then
+            Application.retrieveReading state
             |> Application.updateLights
             |> Application.assessCondition
             |> Application.adjustPollInterval
-            |> Application.displayCondition
-        Thread.Sleep nextState.PollInterval
-        program nextState
+            |> Application.display
+        else
+            Console.WriteLine $"It's {now} - we're closed. We'll be open again tomorrow from {settings.OpeningTime} to {settings.ClosingTime}."
+            state
+    let wait state =
+        Thread.Sleep state.PollInterval
+        state
+    let rec program state =
+        evaluate state
+        |> wait
+        |> program
     let initialState = Application.initialState
-                           ExecutionEnvironment.CommandLine
-                           ExecutionStrategy.GenerateTestSamples
+                           settings.ExecutionStrategy
+                           settings.USGSUri
                            device
-    program {initialState with PollInterval = TimeSpan.FromSeconds 30.0} |> ignore
+    program {initialState with PollInterval = TimeSpan.FromMinutes settings.MinutesBetweenRetrievals} |> ignore
     0

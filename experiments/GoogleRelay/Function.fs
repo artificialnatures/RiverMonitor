@@ -20,7 +20,7 @@ type Function() =
                 |> Application.updateLights
                 |> Application.assessCondition
                 |> Application.adjustPollInterval
-                |> Application.displayCondition
+                |> Application.display
             //Publish message with updated state...either:
             //1. publish USGSReading
             //2. publish event based on the evaluated Request

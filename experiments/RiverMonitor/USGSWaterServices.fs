@@ -9,7 +9,6 @@ open FSharp.Data
 //The sample .json file tells the JsonProvider the data structure to expect.
 //Refer to https://waterservices.usgs.gov/ for details.
 //This program uses the feed at:
-//let siteId = "05331000"
 //https://waterservices.usgs.gov/nwis/iv/?sites=05331000&period=P1D&format=json
 //For single readings: https://waterservices.usgs.gov/nwis/iv/?format=json&sites=05331000&parameterCd=00060&siteStatus=all
 type USGSWaterServicesResponse = JsonProvider<"../json/USGSWaterServices_Response_20210214.json">
@@ -114,7 +113,7 @@ module USGSWaterServices =
             |> assembleReading
             |> Ok
         with
-        | _ -> Error "Failed to retrieve USGS data."
+        | _ as error -> Error $"Failed to retrieve USGS data. ({error.GetType().Name}: {error.Message})"
         
     let parseReading (jsonText : string) =
         use stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonText))

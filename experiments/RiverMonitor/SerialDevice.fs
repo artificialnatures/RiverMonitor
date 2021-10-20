@@ -1,10 +1,10 @@
 namespace RiverMonitor
 
+open System
 open System.IO.Ports
 
-module SerialDevice =
-    let listPorts () = SerialPort.GetPortNames()
-    let create portName =
+type SerialDevice(portName) =
+    let serialPort =
         let serialPort = new SerialPort()
         serialPort.PortName <- portName
         serialPort.BaudRate <- 9600
@@ -13,25 +13,30 @@ module SerialDevice =
         serialPort.StopBits <- StopBits.One
         serialPort.ReadTimeout <- 500
         serialPort.WriteTimeout <- 500
-        serialPort.Open()
         serialPort
-
-type SerialDevice(portName) =
-    let serialPort = SerialDevice.create portName
     interface Device with
-        member this.Mode = DeviceMode.Live
-        member this.IsConnected = serialPort.IsOpen
-        member this.Connect () = ()
-        member this.DisplayCondition condition = ()
         member this.SendRequest request =
             try
-                ColorKinetics.buildRequestCode request
-                |> string
-                |> serialPort.Write
+                serialPort.Open()
+                let message = ColorKinetics.buildRequestCode request
+                for character in message do serialPort.Write(character |> string)
                 System.Threading.Thread.Sleep 100
-                serialPort.ReadExisting()
+                let response = serialPort.ReadExisting()
+                serialPort.Close()
+                response
                 |> Seq.toList
                 |> ColorKinetics.parseResponse
                 |> Ok
+                
             with
             | _ -> Error "Failed to communicate via serial port."
+
+module SerialDevice =
+    let listPorts () = SerialPort.GetPortNames() |> List.ofArray
+    let create portName =
+        let ports = listPorts ()
+        if List.contains portName ports then
+            SerialDevice(portName) :> Device |> Some
+        else
+            Console.WriteLine $"Error: Serial port {portName} not found."
+            None

@@ -13,10 +13,10 @@ module ColorKinetics =
         | SetShow of int
     let requestToString request =
         match request with
-        | TurnLightsOff -> "Turning lights off"
-        | SetIntensity value -> $"Setting intensity to {value}"
-        | SetRelativeIntensity value -> $"Setting relative intensity to {value}"
-        | SetShow value -> $"Setting show to {value}"
+        | TurnLightsOff -> "Turn lights off"
+        | SetIntensity value -> $"Set intensity: {value}"
+        | SetRelativeIntensity value -> $"Set relative intensity: {value}"
+        | SetShow value -> $"Set show: {value}"
     type Response =
         | ModeWasSet of int
         | LightsAreOff
