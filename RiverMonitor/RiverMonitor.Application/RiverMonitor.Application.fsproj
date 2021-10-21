@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>RiverMonitor</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Hexadecimal.fs" />

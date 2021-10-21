@@ -1,0 +1,16 @@
+name: rivermonitor # you probably want to 'snapcraft register <name>'
+base: core20 # the base snap is the execution environment for this snap
+version: '0.1' # just for humans, typically '1.2+git' or '1.3.2'
+summary: Single-line elevator pitch for your amazing snap # 79 char long summary
+description: River Monitor retrieves data from USGS Water Services and controls connected devices in response to measurements.
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: devmode # use 'strict' once you have the right plugs and slots
+
+parts:
+  rivermonitor:
+    plugin: dump
+    source: rivermonitor-$SNAPCRAFT_PROJECT_VERSION-linux-arm64.tar.gz
+
+apps:
+  rivermonitor:
+    command: rivermonitor
