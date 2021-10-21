@@ -1,0 +1,2 @@
+dotnet publish RiverMonitor/ConsoleApp/ConsoleApp.fsproj -r linux-x64 -o build/linux-x64/rivermonitor/ -p:PublishSingleFile=true --self-contained true
+tar -zcv --exclude='.DS_Store' -f ubuntu-core-app/rivermonitor-0.1-linux-amd64.tar.gz build/linux-x64/rivermonitor/
