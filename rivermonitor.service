@@ -1,0 +1,9 @@
+[Unit]
+Description=River Monitor retrieves Mississippi river flow measurements and triggers lighting shows in response.
+After=network-online.target
+
+[Service]
+ExecStart=/home/ubuntu/rivermonitor/rivermonitor
+
+[Install]
+WantedBy=multi-user.target
