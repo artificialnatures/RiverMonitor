@@ -3,15 +3,14 @@ namespace RiverMonitor
 open System
 open System.IO
 open System.Text
-open FSharp.Data
 
 //JsonProvider handles retrieval and parsing of USGS Water Services data.
 //The sample .json file tells the JsonProvider the data structure to expect.
 //Refer to https://waterservices.usgs.gov/ for details.
 //This program uses the feed at:
-//https://waterservices.usgs.gov/nwis/iv/?sites=05331000&period=P1D&format=json
-//For single readings: https://waterservices.usgs.gov/nwis/iv/?format=json&sites=05331000&parameterCd=00060&siteStatus=all
-type USGSWaterServicesResponse = JsonProvider<"../json/USGSWaterServices_Response_20210214.json">
+//https://waterservices.usgs.gov/nwis/iv/?sites=05331000&period=P1D&format=json,1.1
+//For single readings: https://waterservices.usgs.gov/nwis/iv/?format=json,1.1&sites=05331000&parameterCd=00060&siteStatus=all
+type USGSWaterServicesResponse = FSharp.Data.JsonProvider<"../json/USGSWaterServices_Response_20211109_1.1.json">
 
 type USGSVariableName =
     | Temperature
@@ -35,23 +34,18 @@ type USGSReading =
 module USGSWaterServices =
     let siteId = "05331000"
     let period = "P1D"
-    let format = "json"
+    let format = "json,1.1"
     let uri = $"https://waterservices.usgs.gov/nwis/iv/?sites={siteId}&period={period}&format={format}"
     let latestValue (series : USGSWaterServicesResponse.TimeSery) =
-        let value =
+        (*let value =
             (Array.head series.Values).Value
-            |> Array.sortBy (fun v -> v.DateTime.DateTime)
-            |> Array.head
-        (float) value.Value
+            |> Array.tryFindBack (fun v -> not (v.Value.StartsWith("-999")))
+        match value with
+        | None -> 0.0
+        | Some numberText -> (float) numberText*)
+        0.0
     let readSiteName (series : USGSWaterServicesResponse.TimeSery array) =
         (Array.head series).SourceInfo.SiteName
-    let readLatestTime (series : USGSWaterServicesResponse.TimeSery array) =
-        let firstSeries = Array.head series
-        let value =
-            (Array.head firstSeries.Values).Value
-            |> Array.sortBy (fun v -> v.DateTime.DateTime)
-            |> Array.head
-        value.DateTime.DateTime
     let extractVariableId (series : USGSWaterServicesResponse.TimeSery) =
         (Array.head series.Variable.VariableCode).VariableId
     let variableNameToId =
@@ -99,7 +93,7 @@ module USGSWaterServices =
         let dischargeVolume = findValueForVariable DischargeVolume timeSeries
         {
             Site = readSiteName timeSeries
-            Time = readLatestTime timeSeries
+            Time = DateTime.Now
             Temperature = findValueForVariable Temperature timeSeries
             DischargeVolume = dischargeVolume
             GageHeight = findValueForVariable GageHeight timeSeries

@@ -26,6 +26,6 @@ Overwrite the `settings.json` file in the application folder with `test.json` to
 
 Real time Mississippi River data is retrieved from [USGS Water Services](https://waterservices.usgs.gov/). The reading of interest is discharge (parameter 00060), which is measured in cubic feet per second. The reading is produced by instruments at St. Paul (site 05331000). Many other parameters are available on the [physical parameters page](https://help.waterdata.usgs.gov/parameter_cd?group_cd=PHY).
 
-The query for retrieving the most recent discharge reading in JSON format is:
+The query for retrieving the most recent measurements in JSON format is:
 
-[https://waterservices.usgs.gov/nwis/iv/?format=json&sites=05331000&parameterCd=00060&siteStatus=all](https://waterservices.usgs.gov/nwis/iv/?format=json&sites=05331000&parameterCd=00060&siteStatus=all)
+[https://waterservices.usgs.gov/nwis/iv/?sites=05331000&period=P1D&format=json,1.1](https://waterservices.usgs.gov/nwis/iv/?sites=05331000&period=P1D&format=json,1.1)
