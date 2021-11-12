@@ -7,15 +7,14 @@ type ExecutionStrategy =
     | GenerateTestSamples
 
 module ExecutionStrategy =
-    open System
     let fromString (text : string) =
         if text.ToLower().Contains("test")
-        then ExecutionStrategy.GenerateTestSamples
-        else ExecutionStrategy.RetrieveFromUSGS
+        then GenerateTestSamples
+        else RetrieveFromUSGS
     let toString strategy =
         match strategy with
-        | ExecutionStrategy.GenerateTestSamples -> "GenerateTestSamples"
-        | ExecutionStrategy.RetrieveFromUSGS -> "RetrieveFromUSGS"
+        | GenerateTestSamples -> "GenerateTestSamples"
+        | RetrieveFromUSGS -> "RetrieveFromUSGS"
 
 type ApplicationState =
     {

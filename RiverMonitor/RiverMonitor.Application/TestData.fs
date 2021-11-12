@@ -12,12 +12,12 @@ let generate level =
     {
         Site = "Test Site"
         Time = DateTime.Now
-        Temperature = randomValue 32.0 80.0
-        DischargeVolume = randomValue 1000.0 10000.0
-        GageHeight = randomValue 1.0 50.0
-        Elevation = randomValue 650.0 700.0
-        Velocity = randomValue 0.3 30.0
-        IntensityLevel = level
+        Temperature = randomValue 32.0 80.0 |> Some
+        DischargeVolume = randomValue 1000.0 10000.0 |> Some
+        GageHeight = randomValue 1.0 50.0 |> Some
+        Elevation = randomValue 650.0 700.0 |> Some
+        Velocity = randomValue 0.3 30.0 |> Some
+        IntensityLevel = level |> Some
     }
 
 let samples =

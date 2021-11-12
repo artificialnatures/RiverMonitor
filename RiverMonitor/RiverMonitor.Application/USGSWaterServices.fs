@@ -23,27 +23,37 @@ type USGSReading =
     {
         Site : string
         Time : DateTime
-        Temperature : float
-        DischargeVolume : float
-        GageHeight : float
-        Elevation : float
-        Velocity : float
-        IntensityLevel : int
+        Temperature : float option
+        DischargeVolume : float option
+        GageHeight : float option
+        Elevation : float option
+        Velocity : float option
+        IntensityLevel : int option
     }
 
 module USGSWaterServices =
+    open FSharp.Data
+
     let siteId = "05331000"
     let period = "P1D"
     let format = "json,1.1"
     let uri = $"https://waterservices.usgs.gov/nwis/iv/?sites={siteId}&period={period}&format={format}"
-    let latestValue (series : USGSWaterServicesResponse.TimeSery) =
-        (*let value =
-            (Array.head series.Values).Value
-            |> Array.tryFindBack (fun v -> not (v.Value.StartsWith("-999")))
-        match value with
+    let extractValue (jsonRecord : JsonValue) =
+        let isValueProperty (property : string * JsonValue) =
+            let propertyName, _ = property
+            propertyName = "value"
+        match Array.tryFind isValueProperty (jsonRecord.Properties()) with
+        | Some (_, propertyValue) ->
+            match propertyValue with
+            | JsonValue.String number -> (float) number
+            | JsonValue.Number number -> (float) number
+            | JsonValue.Float number -> number
+            | _ -> 0.0
         | None -> 0.0
-        | Some numberText -> (float) numberText*)
-        0.0
+    let extractMeasurement (timeSeries : USGSWaterServicesResponse.TimeSery) =
+        (Array.head timeSeries.Values).Value
+        |> Array.map (fun jd -> extractValue jd.JsonValue)
+        |> Array.tryFindBack (fun v -> v > 0.0)
     let readSiteName (series : USGSWaterServicesResponse.TimeSery array) =
         (Array.head series).SourceInfo.SiteName
     let extractVariableId (series : USGSWaterServicesResponse.TimeSery) =
@@ -59,10 +69,9 @@ module USGSWaterServices =
         |> Map.ofList
     let findValueForVariable variableName (series : USGSWaterServicesResponse.TimeSery array) =
         let variableId = Map.find variableName variableNameToId
-        let matchingSeries = Array.tryFind (fun s -> extractVariableId s = variableId) series
-        match matchingSeries with
-        | Some matchingSeries -> latestValue matchingSeries
-        | None -> 0.0
+        match Array.tryFind (fun s -> extractVariableId s = variableId) series with
+        | None -> None
+        | Some series -> extractMeasurement series
     let upperBounds =
         [
             7000.0
@@ -91,6 +100,10 @@ module USGSWaterServices =
     let assembleReading (response : USGSWaterServicesResponse.Root) =
         let timeSeries = response.Value.TimeSeries
         let dischargeVolume = findValueForVariable DischargeVolume timeSeries
+        let intensityLevel =
+            match dischargeVolume with
+            | None -> None
+            | Some value -> findDischargeLevel value |> Some
         {
             Site = readSiteName timeSeries
             Time = DateTime.Now
@@ -99,7 +112,7 @@ module USGSWaterServices =
             GageHeight = findValueForVariable GageHeight timeSeries
             Elevation = findValueForVariable Elevation timeSeries
             Velocity = findValueForVariable Velocity timeSeries
-            IntensityLevel = findDischargeLevel dischargeVolume
+            IntensityLevel = intensityLevel
         }
     let retrieveLatest () =
         try
@@ -108,20 +121,23 @@ module USGSWaterServices =
             |> Ok
         with
         | _ as error -> Error $"Failed to retrieve USGS data. ({error.GetType().Name}: {error.Message})"
-        
     let parseReading (jsonText : string) =
         use stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonText))
         USGSWaterServicesResponse.Load(stream)
         |> assembleReading
+    let measurementDiscription measurementValue label unitsText =
+        match measurementValue with
+        | Some value -> $"{label}: {value} {unitsText}"
+        | None -> "No data available"
     let toString reading =
         [
             $"Site: {reading.Site} at {reading.Time}"
-            "----------------------------------------";
-            $"Temperature: {reading.Temperature} degrees fahrenheit"
-            $"Discharge Volume: {reading.DischargeVolume} cubic feet per second"
-            $"Gage Height: {reading.GageHeight} feet"
-            $"Elevation: {reading.Elevation} feet"
-            $"Velocity: {reading.Velocity} feet per second"
+            "----------------------------------------"
+            measurementDiscription reading.Temperature "Temperature" "degrees fahrenheit"
+            measurementDiscription reading.DischargeVolume "Discharge Volume" "cubic feet per second"
+            measurementDiscription reading.GageHeight "Gage Height" "feet"
+            measurementDiscription reading.Elevation "Elevation" "feet"
+            measurementDiscription reading.Velocity "Velocity" "feet per second"
             $"Overall Scale: {reading.IntensityLevel}"
         ]
         |> String.concat Environment.NewLine

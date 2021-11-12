@@ -25,9 +25,19 @@ let initialState strategy uri device =
     {
         Strategy = strategy
         USGSUri = uri
-        Condition = ConnectionCondition.Troubled
+        Condition = Normal
         ErrorMessage = ""
-        Reading = Seq.head TestData.samples
+        Reading = 
+            {
+                Site = "Not initialized"
+                Time = System.DateTime.Now
+                Temperature = None
+                DischargeVolume = None
+                GageHeight = None
+                Elevation = None
+                Velocity = None
+                IntensityLevel = None
+            }
         PollInterval = defaultPollInterval strategy
         PreviousRetrievalAt = DateTime.MinValue
         PreviousRequest = ColorKinetics.Request.TurnLightsOff
@@ -42,9 +52,9 @@ let retrieveReading state =
         | Ok reading -> {state with Reading = reading; PreviousRetrievalAt = DateTime.Now; ErrorMessage = ""}
         | Error message -> {state with ErrorMessage = message}
     match state.Strategy with
-    | ExecutionStrategy.RetrieveFromUSGS ->
+    | RetrieveFromUSGS ->
         retrieveFromUSGS state
-    | ExecutionStrategy.GenerateTestSamples ->
+    | GenerateTestSamples ->
         {state with Reading = state.GenerateReading(); PreviousRetrievalAt = DateTime.Now; ErrorMessage = ""}
 
 let adjustPollInterval state =
@@ -70,19 +80,24 @@ let display state =
     state
 
 let updateLights state =
-    let request = ColorKinetics.Request.SetShow state.Reading.IntensityLevel
-    if request = state.PreviousRequest then
-        Console.WriteLine $"No request sent to Color Kinetics, already {ColorKinetics.requestToString request}"
+    match state.Reading.IntensityLevel with
+    | None -> 
+        Console.WriteLine $"No measurement available. No command sent to Color Kinetics."
         state
-    else
-        match state.Device with
-        | Some device ->
-            Console.WriteLine $"Sending request to Color Kinetics: {ColorKinetics.requestToString request}"
-            match device.SendRequest request with
-            | Ok response ->
-                Console.WriteLine $"Received response from Color Kinetics: {ColorKinetics.responseToString response}"
-            | Error message ->
-                Console.WriteLine $"Error from Color Kinetics: {message}"
-        | None ->
-            Console.WriteLine $"No device initialized. Would send request to Color Kinetics: {ColorKinetics.requestToString request}"
-        {state with PreviousRequest = request}
+    | Some level ->
+        let request = ColorKinetics.Request.SetShow level
+        if request = state.PreviousRequest then
+            Console.WriteLine $"No request sent to Color Kinetics, already {ColorKinetics.requestToString request}"
+            state
+        else
+            match state.Device with
+            | Some device ->
+                Console.WriteLine $"Sending request to Color Kinetics: {ColorKinetics.requestToString request}"
+                match device.SendRequest request with
+                | Ok response ->
+                    Console.WriteLine $"Received response from Color Kinetics: {ColorKinetics.responseToString response}"
+                | Error message ->
+                    Console.WriteLine $"Error from Color Kinetics: {message}"
+            | None ->
+                Console.WriteLine $"No device initialized. Would send request to Color Kinetics: {ColorKinetics.requestToString request}"
+            {state with PreviousRequest = request}
