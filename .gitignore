@@ -1,5 +1,7 @@
 build.sh
 
+app/
+
 .vscode/
 .ionide
 .DS_Store

@@ -12,7 +12,31 @@ The device that retrieves data from USGS Water Services and sends commands to th
 
 The microcontroller is running an program written in the F# programming language using the [.NET](https://dotnet.microsoft.com/) software development platform. The source can be viewed on [GitHub](https://github.com/artificialnatures/RiverMonitor).
 
-Build the console application using the [build.sh](build.sh) script on a system with a BASH shell and .NET 5 installed. Copy the built application from the build folder onto the Ubuntu server at `/home/ubuntu/rivermonitor`. Copy the [rivermonitor.service](rivermonitor.service) file onto the Ubuntu server at `/etc/systemd/system/rivermonitor.service`. Start the service by issuing the command:
+### Build
+
+**From this folder:**
+
+Build the console application: 
+
+`dotnet publish RiverMonitor/ConsoleApp/ConsoleApp.fsproj -c Release -r linux-arm64 --self-contained true -p:PublishSingleFile=true -o app`
+
+Copy the built application from the build folder onto the Ubuntu server at `/home/ubuntu/rivermonitor`:
+
+`cp app/* /home/ubuntu`
+
+### Configure
+
+Copy the [rivermonitor.service](rivermonitor.service) file onto the Ubuntu server at `/etc/systemd/system/rivermonitor.service`:
+
+`cp rivermonitor.service /etc/systemd/system/rivermonitor.service`
+
+Copy the [50-cloud-init.yaml](50-cloud-init.yaml) file onto the Ubuntu server at `/etc/netplan/50-cloud-init.yaml`:
+
+`cp 50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml`
+
+### Run
+
+Start the service by issuing the command:
 
 `systemctl start rivermonitor`
 
@@ -20,7 +44,7 @@ and ensure the service starts automatically on boot using the command:
 
 `systemctl enable rivermonitor`
 
-Overwrite the `settings.json` file in the application folder with `test.json` to test the system and `live.json` to retrieve live measurements from USGS.
+Overwrite the `settings.json` file in the application folder with `test.json` to test the system and `live.json` to retrieve live measurements from USGS. Reboot the server to see the changes take effect.
 
 # USGS Water Data
 
